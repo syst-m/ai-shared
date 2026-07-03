@@ -143,6 +143,20 @@ body {
   letter-spacing: 0.08em;
   opacity: 0.7;
 }
+.countdown {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.countdown .cd-num {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--yellow-stadium);
+}
 
 /* ─── PROGRESS BAR ─── */
 .progress-section {
@@ -240,6 +254,7 @@ body {
 .section-title .icon.blue   { background: linear-gradient(135deg, var(--blue-mid), var(--blue-light)); }
 .section-title .icon.green  { background: linear-gradient(135deg, var(--green-pitch), var(--green-light)); }
 .section-title .icon.red    { background: linear-gradient(135deg, #c53030, #fc8181); }
+.section-title .icon.gold   { background: linear-gradient(135deg, #b7791f, #ecc94b); }
 
 /* ─── MATCH CARDS ─── */
 .result-subtitle {
@@ -390,6 +405,182 @@ body {
   font-size: 0.76rem;
   color: var(--gray-600);
   margin-top: 0.2rem;
+}
+
+/* ─── TOP SCORERS ─── */
+.scorers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+.scorer-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.scorer-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+.scorer-rank {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-400);
+  min-width: 30px;
+  text-align: center;
+}
+.scorer-rank.gold { color: #b7791f; }
+.scorer-rank.silver { color: #718096; }
+.scorer-rank.bronze { color: #c05621; }
+.scorer-info { flex: 1; min-width: 0; }
+.scorer-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--blue-deep);
+}
+.scorer-team {
+  font-size: 0.78rem;
+  color: var(--gray-600);
+}
+.scorer-goals {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--orange-gold);
+  min-width: 40px;
+  text-align: right;
+}
+.scorer-goals-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-400);
+  text-align: right;
+}
+
+/* ─── VENUE CARDS ─── */
+.venues-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+.venue-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.venue-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+.venue-card-accent {
+  height: 6px;
+  background: linear-gradient(90deg, var(--blue-mid), var(--green-light));
+}
+.venue-card-accent.host {
+  background: linear-gradient(90deg, var(--orange-gold), var(--yellow-stadium));
+}
+.venue-card-body { padding: 1rem 1.25rem; }
+.venue-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--blue-deep);
+  margin-bottom: 0.25rem;
+}
+.venue-city {
+  font-size: 0.82rem;
+  color: var(--gray-600);
+  margin-bottom: 0.5rem;
+}
+.venue-details {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--gray-400);
+}
+.venue-detail { display: flex; align-items: center; gap: 0.25rem; }
+.venue-host-badge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(221,107,32,0.1);
+  color: var(--orange-gold);
+  margin-left: 0.5rem;
+}
+
+/* ─── TOURNAMENT TIMELINE ─── */
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+  margin-bottom: 3rem;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--blue-mid), var(--green-light), var(--orange-gold));
+}
+.timeline-item {
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -1.65rem;
+  top: 0.35rem;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--blue-mid);
+  background: var(--white);
+}
+.timeline-item.past::before {
+  background: var(--blue-mid);
+  border-color: var(--blue-mid);
+}
+.timeline-item.current::before {
+  background: var(--green-light);
+  border-color: var(--green-light);
+  box-shadow: 0 0 0 4px rgba(72,187,120,0.2);
+}
+.timeline-item.upcoming::before {
+  background: var(--white);
+  border-color: var(--gray-400);
+}
+.timeline-date {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.timeline-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--blue-deep);
+}
+.timeline-desc {
+  font-size: 0.82rem;
+  color: var(--gray-600);
+  margin-top: 0.15rem;
 }
 
 /* ─── GROUP STANDINGS ─── */
@@ -602,6 +793,8 @@ body {
   .groups-wrapper { grid-template-columns: 1fr 1fr; }
   .hero-stats { gap: 1.5rem; }
   .tab-nav { padding: 0 1rem; }
+  .venues-grid { grid-template-columns: 1fr; }
+  .scorers-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
   .groups-wrapper { grid-template-columns: 1fr; }
@@ -612,15 +805,16 @@ body {
 
 <header class="hero">
   <div class="hero-inner">
-    <div class="hero-badge"><span class="dot"></span> Live — July 1, 2026</div>
+    <div class="hero-badge"><span class="dot"></span> Live — July 2, 2026</div>
     <h1>FIFA World Cup <span>2026</span></h1>
     <p>Canada · Mexico · USA — Round of 32 Underway</p>
+    <div class="countdown" id="countdown"></div>
     <div class="hero-stats">
       <div class="hero-stat"><div class="num">48</div><div class="label">Teams</div></div>
-      <div class="hero-stat"><div class="num">81</div><div class="label">Matches Played</div></div>
-      <div class="hero-stat"><div class="num">186</div><div class="label">Total Goals</div></div>
-      <div class="hero-stat"><div class="num">23</div><div class="label">Matches Left</div></div>
-      <div class="hero-stat"><div class="num">24</div><div class="label">Teams Left</div></div>
+      <div class="hero-stat"><div class="num">84</div><div class="label">Matches Played</div></div>
+      <div class="hero-stat"><div class="num">192</div><div class="label">Total Goals</div></div>
+      <div class="hero-stat"><div class="num">20</div><div class="label">Matches Left</div></div>
+      <div class="hero-stat"><div class="num">20</div><div class="label">Teams Left</div></div>
     </div>
   </div>
 </header>
@@ -630,10 +824,10 @@ body {
   <div class="progress-card">
     <div class="progress-label">
       <span>Tournament Progress</span>
-      <span>81 / 104 matches</span>
+      <span>84 / 104 matches</span>
     </div>
     <div class="progress-bar">
-      <div class="progress-fill" style="width: 77.9%"></div>
+      <div class="progress-fill" style="width: 80.8%"></div>
     </div>
   </div>
 </div>
@@ -644,6 +838,9 @@ body {
   <button class="tab-btn" data-tab="groupstage">🏟️ Group Stage</button>
   <button class="tab-btn" data-tab="standings">📊 Standings</button>
   <button class="tab-btn" data-tab="upcoming">📅 Upcoming</button>
+  <button class="tab-btn" data-tab="scorers">⚽ Top Scorers</button>
+  <button class="tab-btn" data-tab="venues">🏟️ Venues</button>
+  <button class="tab-btn" data-tab="timeline">📋 Timeline</button>
 </nav>
 
 <main class="container">
@@ -654,14 +851,14 @@ body {
     <!-- Round of 32: Completed -->
     <section>
       <h2 class="section-title"><span class="icon red">⚔</span> Round of 32 — Results</h2>
-      <p class="result-subtitle">June 28 – July 1 · 8 of 13 matches completed</p>
+      <p class="result-subtitle">June 28 – July 2 · 12 of 16 matches completed</p>
       <div class="matches-grid" id="r32Results"></div>
     </section>
 
     <!-- Round of 32: Upcoming -->
     <section>
       <h2 class="section-title"><span class="icon orange">⏳</span> Round of 32 — Upcoming</h2>
-      <p class="result-subtitle">July 2 – 3 · 5 matches remaining</p>
+      <p class="result-subtitle">July 2 – 3 · 4 matches remaining</p>
       <div class="matches-grid" id="r32Upcoming"></div>
     </section>
 
@@ -727,10 +924,43 @@ body {
     </section>
   </div>
 
+  <!-- ═══ TAB 5: TOP SCORERS ═══ -->
+  <div class="tab-content" id="tab-scorers">
+    <section>
+      <h2 class="section-title"><span class="icon gold">⚽</span> Top Goal Scorers</h2>
+      <p style="font-size:0.88rem;color:var(--gray-600);margin-bottom:1.5rem;">
+        Leading goalscorers through the Round of 32.
+      </p>
+      <div class="scorers-grid" id="scorersGrid"></div>
+    </section>
+  </div>
+
+  <!-- ═══ TAB 6: VENUES ═══ -->
+  <div class="tab-content" id="tab-venues">
+    <section>
+      <h2 class="section-title"><span class="icon blue">🏟️</span> Stadiums &amp; Host Cities</h2>
+      <p style="font-size:0.88rem;color:var(--gray-600);margin-bottom:1.5rem;">
+        16 venues across 3 countries — the largest World Cup footprint in history.
+      </p>
+      <div class="venues-grid" id="venuesGrid"></div>
+    </section>
+  </div>
+
+  <!-- ═══ TAB 7: TIMELINE ═══ -->
+  <div class="tab-content" id="tab-timeline">
+    <section>
+      <h2 class="section-title"><span class="icon green">📋</span> Tournament Timeline</h2>
+      <p style="font-size:0.88rem;color:var(--gray-600);margin-bottom:1.5rem;">
+        Key dates and milestones from opening match to the Final.
+      </p>
+      <div class="timeline" id="timelineContainer"></div>
+    </section>
+  </div>
+
 </main>
 
 <footer class="footer">
-  Data as of July 1, 2026 · Sources: CBS Sports, Olympics.com, FIFA.com · Built for fans
+  Data as of July 2, 2026 · Sources: CBS Sports, Olympics.com, FIFA.com · Built for fans
 </footer>
 
 <script>
@@ -754,10 +984,13 @@ var TEAM_COLORS = {
 };
 
 function teamColor(name) {
+  // Handle slash-separated TBD names
+  if (name.indexOf('/') !== -1) return '#a0aec0';
   return TEAM_COLORS[name] || '#666666';
 }
 
 function teamInitials(name) {
+  if (name.indexOf('/') !== -1) return '?';
   var clean = name.replace(/[^a-zA-Z ]/g, '');
   var parts = clean.split(' ');
   if (parts.length >= 2) {
@@ -770,51 +1003,27 @@ function teamInitials(name) {
 var r32Completed = [
   { date:'Jun 28', home:'South Africa', away:'Canada', hsc:0, ascore:1, winner:'Canada', venue:'SoFi Stadium', pens:false },
   { date:'Jun 28', home:'Brazil', away:'Japan', hsc:2, ascore:1, winner:'Brazil', venue:'MetLife Stadium', pens:false },
-  { date:'Jun 28', home:'Germany', away:'Paraguay', hsc:1, ascore:1, winner:'Germany', venue:'Estadio BBVA', pens:'4-3' },
+  { date:'Jun 29', home:'Germany', away:'Paraguay', hsc:1, ascore:1, winner:'Germany', venue:'Estadio BBVA', pens:'4-3' },
   { date:'Jun 29', home:'Netherlands', away:'Morocco', hsc:1, ascore:1, winner:'Netherlands', venue:'BMO Field', pens:'3-2' },
-  { date:'Jun 29', home:'Ivory Coast', away:'Norway', hsc:1, ascore:2, winner:'Norway', venue:'BC Place', pens:false },
+  { date:'Jun 30', home:'Ivory Coast', away:'Norway', hsc:1, ascore:2, winner:'Norway', venue:'BC Place', pens:false },
   { date:'Jun 30', home:'France', away:'Sweden', hsc:3, ascore:0, winner:'France', venue:'Hard Rock Stadium', pens:false },
   { date:'Jun 30', home:'Mexico', away:'Ecuador', hsc:2, ascore:0, winner:'Mexico', venue:'AT&T Stadium', pens:false },
   { date:'Jul 1', home:'England', away:'DR Congo', hsc:2, ascore:1, winner:'England', venue:'Mercedes-Benz Stadium', pens:false },
-  { date:'Jul 1', home:'Belgium', away:'Senegal', hsc:3, ascore:2, winner:'Belgium', venue:'Lumen Field', pens:false }
+  { date:'Jul 1', home:'Belgium', away:'Senegal', hsc:3, ascore:2, winner:'Belgium', venue:'Lumen Field', pens:false },
+  { date:'Jul 1', home:'United States', away:'Bosnia and Herzegovina', hsc:2, ascore:0, winner:'United States', venue:'Gillette Stadium', pens:false },
+  { date:'Jul 2', home:'Spain', away:'Austria', hsc:3, ascore:0, winner:'Spain', venue:'Estadio Azteca', pens:false },
+  { date:'Jul 2', home:'Portugal', away:'Croatia', hsc:2, ascore:1, winner:'Portugal', venue:'Rogers Centre', pens:false }
 ];
 
 /* ─── ROUND OF 32: UPCOMING ─── */
 var r32Upcoming = [
-  { date:'Jul 2', home:'Mexico', away:'Ecuador', hsc:null, ascore:null, venue:'SoFi Stadium' },
   { date:'Jul 2', home:'Switzerland', away:'Algeria', hsc:null, ascore:null, venue:'BC Place' },
-  { date:'Jul 2', home:'Portugal', away:'Croatia', hsc:null, ascore:null, venue:'Rogers Centre' },
   { date:'Jul 3', home:'Australia', away:'Egypt', hsc:null, ascore:null, venue:'AT&T Stadium' },
-  { date:'Jul 3', home:'Argentina', away:'Cabo Verde', hsc:null, ascore:null, venue:'Hard Rock Stadium' },
+  { date:'Jul 3', home:'Argentina', away:'Cape Verde', hsc:null, ascore:null, venue:'Hard Rock Stadium' },
   { date:'Jul 3', home:'Colombia', away:'Ghana', hsc:null, ascore:null, venue:'Arrowhead Stadium' }
 ];
 
-/* Fix: remove duplicate Mexico/Ecuador from upcoming (already in completed) */
-r32Upcoming = r32Upcoming.filter(function(m) {
-  return !(m.home === 'Mexico' && m.away === 'Ecuador');
-});
-
 /* ─── ROUND OF 16: PROJECTED BRACKET ─── */
-var r16Matches = [
-  { date:'Jul 4', home:'Canada', away:'Morocco', hsc:null, ascore:null, venue:'NRG Stadium',
-    hSrc:'r32', aSrc:'r32', hIdx:0, aIdx:3 },
-  { date:'Jul 4', home:'Paraguay', away:'France', hsc:null, ascore:null, venue:'Lincoln Financial Field',
-    hSrc:'r32-pens', aSrc:'r32', hIdx:2, aIdx:5 },
-  { date:'Jul 5', home:'Brazil', away:'Norway', hsc:null, ascore:null, venue:'MetLife Stadium',
-    hSrc:'r32', aSrc:'r32', hIdx:1, aIdx:4 },
-  { date:'Jul 5', home:'Mexico', away:'England', hsc:null, ascore:null, venue:'Estadio Azteca',
-    hSrc:'r32', aSrc:'r32', hIdx:6, aIdx:7 },
-  { date:'Jul 6', home:'Portugal', away:'Croatia', away2:true, hsc:null, ascore:null, venue:'AT&T Stadium',
-    hSrc:'r32-upcoming', aSrc:'r32-upcoming', hIdx:2, aIdx:2 },
-  { date:'Jul 6', home:'United States', away:'Belgium', hsc:null, ascore:null, venue:'Lumen Field',
-    hSrc:'r32-upcoming', aSrc:'r32', hIdx:10, aIdx:8 },
-  { date:'Jul 7', home:'Argentina', away2:true, away3:true, hsc:null, ascore:null, venue:'Mercedes-Benz Stadium',
-    hSrc:'r32-upcoming', aSrc:'r32-upcoming', hIdx:4, aIdx:5 },
-  { date:'Jul 7', home:'Switzerland', away2:true, hsc:null, ascore:null, venue:'BC Place',
-    hSrc:'r32-upcoming', aSrc:'r32-upcoming', hIdx:1, aIdx:5 }
-];
-
-/* Better R16 bracket — based on actual CBS Sports projections */
 var r16Bracket = [
   { slot:1, home:'Canada', away:'Morocco', date:'Jul 4', venue:'NRG Stadium, Houston',
     w1:'Canada', w2:'Netherlands' },
@@ -824,14 +1033,78 @@ var r16Bracket = [
     w1:'Brazil', w2:'Norway' },
   { slot:4, home:'Mexico', away:'England', date:'Jul 5', venue:'Estadio Azteca, Mexico City',
     w1:'Mexico', w2:'England' },
-  { slot:5, home:'Portugal', away:'Croatia', awayTBD:true, date:'Jul 6', venue:'AT&T Stadium, Dallas',
-    w1:'Portugal/Croatia', w2:'Spain/Austria' },
+  { slot:5, home:'Portugal', away:'Spain', date:'Jul 6', venue:'AT&T Stadium, Dallas',
+    w1:'Portugal', w2:'Spain' },
   { slot:6, home:'United States', away:'Belgium', date:'Jul 6', venue:'Lumen Field, Seattle',
-    w1:'United States/Bosnia', w2:'Belgium' },
-  { slot:7, home:'Argentina', awayTBD:true, away2TBD:true, date:'Jul 7', venue:'Mercedes-Benz Stadium, Atlanta',
-    w1:'Argentina/Cabo Verde', w2:'Australia/Egypt' },
-  { slot:8, home:'Switzerland', awayTBD:true, away2TBD:true, date:'Jul 7', venue:'BC Place, Vancouver',
+    w1:'United States', w2:'Belgium' },
+  { slot:7, home:'Argentina', away:'Australia', date:'Jul 7', venue:'Mercedes-Benz Stadium, Atlanta',
+    w1:'Argentina/Cape Verde', w2:'Australia/Egypt' },
+  { slot:8, home:'Switzerland', away:'Colombia', date:'Jul 7', venue:'BC Place, Vancouver',
     w1:'Switzerland/Algeria', w2:'Colombia/Ghana' }
+];
+
+/* ─── TOP SCORERS ─── */
+var topScorers = [
+  { name:'Kylian Mbappé', team:'France', goals:5 },
+  { name:'Erling Haaland', team:'Norway', goals:4 },
+  { name:'Harry Kane', team:'England', goals:4 },
+  { name:'Lionel Messi', team:'Argentina', goals:3 },
+  { name:'Vinicius Junior', team:'Brazil', goals:3 },
+  { name:'Lamine Yamal', team:'Spain', goals:3 },
+  { name:'Cristiano Ronaldo', team:'Portugal', goals:3 },
+  { name:'Jude Bellingham', team:'England', goals:2 },
+  { name:'Neymar', team:'Brazil', goals:2 },
+  { name:'Mohamed Salah', team:'Egypt', goals:2 },
+  { name:'Alexander Isak', team:'Sweden', goals:2 },
+  { name:'Rasmus Højlund', team:'Denmark', goals:2 }
+];
+
+/* ─── VENUES ─── */
+var venues = [
+  { name:'Estadio Azteca', city:'Mexico City', country:'Mexico', capacity:'87,000',
+    keyMatches:'Opening Match, R32, Semi-final', host:true },
+  { name:'Estadio BBVA', city:'Monterrey (Guadalupe)', country:'Mexico', capacity:'53,500',
+    keyMatches:'Group stage, R32', host:true },
+  { name:'Estadio Akron', city:'Guadalajara (Zapopan)', country:'Mexico', capacity:'48,000',
+    keyMatches:'Group stage', host:true },
+  { name:'MetLife Stadium', city:'East Rutherford, NJ', country:'USA', capacity:'82,500',
+    keyMatches:'Final, Semi-final, R32', host:true },
+  { name:'AT&T Stadium', city:'Arlington, TX', country:'USA', capacity:'82,000',
+    keyMatches:'Semi-final, R32, R16', host:true },
+  { name:'Mercedes-Benz Stadium', city:'Atlanta, GA', country:'USA', capacity:'75,000',
+    keyMatches:'Semi-final, R32, R16', host:true },
+  { name:'GEHA Field at Arrowhead', city:'Kansas City, MO', country:'USA', capacity:'76,000',
+    keyMatches:'Quarter-finals, R16', host:true },
+  { name:'NRG Stadium', city:'Houston, TX', country:'USA', capacity:'72,000',
+    keyMatches:'Quarter-finals, R16', host:true },
+  { name:'Levi\'s Stadium', city:'Santa Clara, CA', country:'USA', capacity:'71,000',
+    keyMatches:'Quarter-finals, R32', host:true },
+  { name:'SoFi Stadium', city:'Los Angeles, CA', country:'USA', capacity:'70,000',
+    keyMatches:'Quarter-finals, R32', host:true },
+  { name:'Lincoln Financial Field', city:'Philadelphia, PA', country:'USA', capacity:'69,000',
+    keyMatches:'Round of 16', host:true },
+  { name:'Lumen Field', city:'Seattle, WA', country:'USA', capacity:'69,000',
+    keyMatches:'Round of 16, R32', host:true },
+  { name:'Gillette Stadium', city:'Foxborough, MA', country:'USA', capacity:'65,000',
+    keyMatches:'Round of 16, R32', host:true },
+  { name:'Hard Rock Stadium', city:'Miami Gardens, FL', country:'USA', capacity:'65,000',
+    keyMatches:'Third-place match, R32', host:true },
+  { name:'BC Place', city:'Vancouver', country:'Canada', capacity:'54,000',
+    keyMatches:'Group stage, R32, R16', host:true },
+  { name:'BMO Field', city:'Toronto', country:'Canada', capacity:'45,700',
+    keyMatches:'Group stage, R32', host:true }
+];
+
+/* ─── TOURNAMENT TIMELINE ─── */
+var timeline = [
+  { date:'Jun 11', title:'Opening Match', desc:'Mexico vs. South Africa — Estadio Azteca, Mexico City', status:'past' },
+  { date:'Jun 11 – 27', title:'Group Stage', desc:'72 matches across 12 groups (A–L) at 16 venues', status:'past' },
+  { date:'Jun 28 – Jul 3', title:'Round of 32', desc:'16 knockout matches — 48 → 32 teams → 16', status:'current' },
+  { date:'Jul 4 – 7', title:'Round of 16', desc:'8 matches — 16 → 8 teams remain', status:'upcoming' },
+  { date:'Jul 10 – 11', title:'Quarter-finals', desc:'4 matches — 8 → 4 teams reach the semis', status:'upcoming' },
+  { date:'Jul 14 – 15', title:'Semi-finals', desc:'2 matches at MetLife, AT&T, and Mercedes-Benz', status:'upcoming' },
+  { date:'Jul 18', title:'Third-Place Match', desc:'Hard Rock Stadium, Miami Gardens', status:'upcoming' },
+  { date:'Jul 19', title:'FINAL', desc:'MetLife Stadium, East Rutherford, NJ — The World Champion is crowned', status:'upcoming' }
 ];
 
 /* ─── GROUP STAGE MATCH RESULTS (all 72 matches) ─── */
@@ -947,7 +1220,7 @@ var groups = [
     ]},
   { letter:'D', cls:'g4',
     teams:[
-      { name:'United States', pts:6, gp:3, w:2, d:0, l:1, gd:5, gf:7, ga:3, qa:true },
+      { name:'United States', pts:6, gp:3, w:2, d:0, l:1, gd:4, gf:7, ga:3, qa:true },
       { name:'Australia', pts:4, gp:3, w:1, d:1, l:1, gd:0, gf:2, ga:2, qa:true },
       { name:'Paraguay', pts:3, gp:3, w:1, d:0, l:2, gd:-2, gf:1, ga:3, elim:true },
       { name:'Turkiye', pts:3, gp:3, w:1, d:0, l:2, gd:-3, gf:4, ga:7, elim:true }
@@ -976,8 +1249,8 @@ var groups = [
   { letter:'H', cls:'g8',
     teams:[
       { name:'Spain', pts:7, gp:3, w:2, d:1, l:0, gd:5, gf:5, ga:0, qa:true },
-      { name:'Cape Verde', pts:3, gp:3, w:0, d:3, l:0, gd:0, gf:4, ga:4, qa:true },
-      { name:'Uruguay', pts:1, gp:3, w:0, d:1, l:2, gd:-1, gf:3, ga:4, elim:true },
+      { name:'Cape Verde', pts:4, gp:3, w:1, d:1, l:1, gd:0, gf:4, ga:4, qa:true },
+      { name:'Uruguay', pts:3, gp:3, w:1, d:0, l:2, gd:-1, gf:3, ga:4, elim:true },
       { name:'Saudi Arabia', pts:2, gp:3, w:0, d:2, l:1, gd:-4, gf:2, ga:6, elim:true }
     ]},
   { letter:'I', cls:'g9',
@@ -1077,7 +1350,7 @@ function renderKnockoutMatch(m, headerClass, headerText) {
   } else if (m.hsc === null) {
     var st = document.createElement('span');
     st.className = 'status upcoming';
-    st.textContent = 'TBD';
+    st.textContent = 'Upcoming';
     info.appendChild(st);
   }
   body.appendChild(info);
@@ -1374,8 +1647,10 @@ function renderKnockoutMatch(m, headerClass, headerText) {
    RENDER: ELIMINATED TEAMS
    ================================================================ */
 (function renderEliminated() {
-  // R32 eliminated
-  var r32Elim = ['South Africa','Japan','Germany','Netherlands','Ivory Coast','Sweden','Ecuador','DR Congo','Senegal'];
+  // R32 eliminated (12 teams knocked out)
+  var r32Elim = ['South Africa','Japan','Paraguay','Morocco','Ivory Coast',
+                 'Sweden','Ecuador','DR Congo','Senegal',
+                 'Bosnia and Herzegovina','Austria','Croatia'];
   var grid1 = document.getElementById('eliminatedGrid');
   if (grid1) {
     for (var i = 0; i < r32Elim.length; i++) {
@@ -1391,8 +1666,10 @@ function renderKnockoutMatch(m, headerClass, headerText) {
     }
   }
 
-  // Group stage eliminated
-  var groupElim = ['Qatar','Panama','Tunisia','Turkiye','Haiti','Jordan','Czechia','Curacao','Iraq','Uruguay','Saudi Arabia','New Zealand','Scotland','Uzbekistan','Iran'];
+  // Group stage eliminated (15 teams)
+  var groupElim = ['Qatar','Panama','Tunisia','Turkiye','Haiti','Jordan',
+                   'Czechia','Curacao','Iraq','Uruguay','Saudi Arabia',
+                   'New Zealand','Scotland','Uzbekistan','Iran'];
   var grid2 = document.getElementById('groupEliminatedGrid');
   if (grid2) {
     for (var i = 0; i < groupElim.length; i++) {
@@ -1406,6 +1683,142 @@ function renderKnockoutMatch(m, headerClass, headerText) {
       tag.appendChild(document.createTextNode(groupElim[i]));
       grid2.appendChild(tag);
     }
+  }
+})();
+
+/* ================================================================
+   RENDER: TOP SCORERS
+   ================================================================ */
+(function renderScorers() {
+  var grid = document.getElementById('scorersGrid');
+  if (!grid) return;
+
+  for (var i = 0; i < topScorers.length; i++) {
+    var s = topScorers[i];
+    var card = document.createElement('div');
+    card.className = 'scorer-card';
+
+    var rank = document.createElement('div');
+    rank.className = 'scorer-rank';
+    if (i === 0) rank.className += ' gold';
+    else if (i === 1) rank.className += ' silver';
+    else if (i === 2) rank.className += ' bronze';
+    rank.textContent = '#' + (i + 1);
+
+    var info = document.createElement('div');
+    info.className = 'scorer-info';
+
+    var name = document.createElement('div');
+    name.className = 'scorer-name';
+    name.textContent = s.name;
+
+    var team = document.createElement('div');
+    team.className = 'scorer-team';
+    team.textContent = s.team;
+
+    info.appendChild(name);
+    info.appendChild(team);
+
+    var goals = document.createElement('div');
+    goals.style.textAlign = 'right';
+
+    var goalsNum = document.createElement('div');
+    goalsNum.className = 'scorer-goals';
+    goalsNum.textContent = s.goals;
+
+    var goalsLabel = document.createElement('div');
+    goalsLabel.className = 'scorer-goals-label';
+    goalsLabel.textContent = 'goals';
+
+    goals.appendChild(goalsNum);
+    goals.appendChild(goalsLabel);
+
+    card.appendChild(rank);
+    card.appendChild(info);
+    card.appendChild(goals);
+    grid.appendChild(card);
+  }
+})();
+
+/* ================================================================
+   RENDER: VENUES
+   ================================================================ */
+(function renderVenues() {
+  var grid = document.getElementById('venuesGrid');
+  if (!grid) return;
+
+  for (var i = 0; i < venues.length; i++) {
+    var v = venues[i];
+    var card = document.createElement('div');
+    card.className = 'venue-card';
+
+    var accent = document.createElement('div');
+    accent.className = 'venue-card-accent' + (v.host ? ' host' : '');
+
+    var body = document.createElement('div');
+    body.className = 'venue-card-body';
+
+    var name = document.createElement('div');
+    name.className = 'venue-name';
+    name.textContent = v.name + (v.host ? '<span class="venue-host-badge">Host</span>' : '');
+    name.innerHTML = v.name + (v.host ? '<span class="venue-host-badge">Host</span>' : '');
+
+    var city = document.createElement('div');
+    city.className = 'venue-city';
+    city.textContent = v.city + ', ' + v.country;
+
+    var details = document.createElement('div');
+    details.className = 'venue-details';
+
+    var cap = document.createElement('span');
+    cap.className = 'venue-detail';
+    cap.textContent = '👥 ' + v.capacity;
+
+    var km = document.createElement('span');
+    km.className = 'venue-detail';
+    km.textContent = '📋 ' + v.keyMatches;
+
+    details.appendChild(cap);
+    details.appendChild(km);
+
+    body.appendChild(name);
+    body.appendChild(city);
+    body.appendChild(details);
+
+    card.appendChild(accent);
+    card.appendChild(body);
+    grid.appendChild(card);
+  }
+})();
+
+/* ================================================================
+   RENDER: TOURNAMENT TIMELINE
+   ================================================================ */
+(function renderTimeline() {
+  var container = document.getElementById('timelineContainer');
+  if (!container) return;
+
+  for (var i = 0; i < timeline.length; i++) {
+    var t = timeline[i];
+    var item = document.createElement('div');
+    item.className = 'timeline-item ' + t.status;
+
+    var date = document.createElement('div');
+    date.className = 'timeline-date';
+    date.textContent = t.date;
+
+    var title = document.createElement('div');
+    title.className = 'timeline-title';
+    title.textContent = t.title;
+
+    var desc = document.createElement('div');
+    desc.className = 'timeline-desc';
+    desc.textContent = t.desc;
+
+    item.appendChild(date);
+    item.appendChild(title);
+    item.appendChild(desc);
+    container.appendChild(item);
   }
 })();
 
@@ -1509,6 +1922,28 @@ function renderKnockoutMatch(m, headerClass, headerText) {
     card.appendChild(body);
     grid.appendChild(card);
   }
+})();
+
+/* ================================================================
+   COUNTDOWN TO FINAL
+   ================================================================ */
+(function countdown() {
+  var el = document.getElementById('countdown');
+  if (!el) return;
+
+  var finalDate = new Date('2026-07-19T18:00:00-04:00');
+  var now = new Date();
+  var diff = finalDate - now;
+
+  if (diff <= 0) {
+    el.innerHTML = '🏆 <strong>Final played!</strong>';
+    return;
+  }
+
+  var days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+  el.innerHTML = '🏆 <span class="cd-num">' + days + '</span> days, <span class="cd-num">' + hours + '</span> hours until the Final at MetLife Stadium';
 })();
 
 /* ================================================================
