@@ -1,0 +1,328 @@
+{
+  "meta": {
+    "title": "FIFA World Cup 2026",
+    "subtitle": "Canada · Mexico · USA — Quarter-finals Underway",
+    "badge": "Live",
+    "currentDate": "July 9, 2026",
+    "finalDate": "2026-07-19T23:00:00-04:00",
+    "finalVenue": "MetLife Stadium, East Rutherford, NJ"
+  },
+
+  "stats": {
+    "teams": 48,
+    "matchesPlayed": 103,
+    "totalMatches": 104,
+    "progressPct": 99,
+    "totalGoals": "~247",
+    "matchesLeft": 1,
+    "teamsLeft": 8
+  },
+
+  "tournamentStats": [
+    { "value": "~2.40", "label": "Goals / Match" },
+    { "value": "20", "label": "Clean Sheets" },
+    { "value": "12", "label": "Players 3+ Goals" },
+    { "value": "5", "label": "Penalty Shootouts" },
+    { "value": "8", "label": "Red Cards" },
+    { "value": "~140", "label": "Assists" }
+  ],
+
+  "teams": {
+    "Mexico":"#006847", "South Africa":"#007A4D", "South Korea":"#C00000", "Czechia":"#11457E",
+    "Switzerland":"#DA291C", "Canada":"#FF0000", "Bosnia and Herzegovina":"#002395", "Qatar":"#8A1538",
+    "Brazil":"#FEDD00", "Morocco":"#C1272D", "Scotland":"#12286B", "Haiti":"#002868",
+    "United States":"#002868", "Australia":"#00843D", "Paraguay":"#D52B1E", "Turkiye":"#E30A17",
+    "Germany":"#000000", "Ivory Coast":"#F77F00", "Ecuador":"#FFD100", "Curacao":"#FF4D00",
+    "Netherlands":"#F36C21", "Japan":"#002B5C", "Sweden":"#006B7A", "Tunisia":"#E70013",
+    "Egypt":"#CE1126", "Belgium":"#FDDA24", "Iran":"#FFFFFF", "New Zealand":"#000000",
+    "Spain":"#C60B1E", "Uruguay":"#5DADE2", "Cape Verde":"#FF3348", "Saudi Arabia":"#006C35",
+    "France":"#002395", "Norway":"#BA0C2F", "Senegal":"#00853F", "Iraq":"#ED1C24",
+    "Argentina":"#75AADB", "Austria":"#ED2F26", "Algeria":"#006633", "Jordan":"#CE1126",
+    "Colombia":"#FCD116", "Portugal":"#FF0000", "DR Congo":"#007FFF", "Uzbekistan":"#0099B0",
+    "England":"#003366", "Ghana":"#006B3F", "Croatia":"#ED1C24", "Panama":"#D21034"
+  },
+
+  "knockout": {
+    "r32": [
+      { "date":"Jun 28", "home":"South Africa", "away":"Canada",       "hs":0, "as":1, "winner":"Canada",  "venue":"SoFi Stadium" },
+      { "date":"Jun 28", "home":"Brazil",     "away":"Japan",         "hs":2, "as":1, "winner":"Brazil",    "venue":"MetLife Stadium" },
+      { "date":"Jun 29", "home":"Germany",    "away":"Paraguay",       "hs":1, "as":1, "winner":"Paraguay","venue":"Estadio BBVA",  "pens":"4-3" },
+      { "date":"Jun 29", "home":"Netherlands","away":"Morocco",        "hs":1, "as":1, "winner":"Morocco", "venue":"BMO Field",     "pens":"3-2" },
+      { "date":"Jun 30", "home":"Ivory Coast","away":"Norway",         "hs":1, "as":2, "winner":"Norway",    "venue":"BC Place" },
+      { "date":"Jun 30", "home":"France",     "away":"Sweden",         "hs":3, "as":0, "winner":"France",    "venue":"Hard Rock Stadium" },
+      { "date":"Jun 30", "home":"Mexico",     "away":"Ecuador",        "hs":2, "as":0, "winner":"Mexico",    "venue":"AT&T Stadium" },
+      { "date":"Jul  1", "home":"England",    "away":"DR Congo",       "hs":2, "as":1, "winner":"England",   "venue":"Mercedes-Benz Stadium", "aet":true },
+      { "date":"Jul  1", "home":"Belgium",    "away":"Senegal",        "hs":3, "as":2, "winner":"Belgium",   "venue":"Lumen Field",     "aet":true },
+      { "date":"Jul  1", "home":"United States","away":"Bosnia and Herzegovina", "hs":2,"as":0,"winner":"United States","venue":"Gillette Stadium" },
+      { "date":"Jul  2", "home":"Spain",      "away":"Austria",        "hs":3, "as":0, "winner":"Spain",     "venue":"Estadio Azteca" },
+      { "date":"Jul  2", "home":"Portugal",   "away":"Croatia",        "hs":2, "as":1, "winner":"Portugal",  "venue":"BMO Field" },
+      { "date":"Jul  2", "home":"Switzerland","away":"Algeria",        "hs":2, "as":0, "winner":"Switzerland","venue":"BC Place" },
+      { "date":"Jul  3", "home":"Australia",  "away":"Egypt",          "hs":1, "as":1, "winner":"Egypt",     "venue":"AT&T Stadium",  "pens":"4-2" },
+      { "date":"Jul  3", "home":"Argentina",  "away":"Cape Verde",     "hs":3, "as":2, "winner":"Argentina", "venue":"Hard Rock Stadium", "aet":true },
+      { "date":"Jul  3", "home":"Colombia",   "away":"Ghana",          "hs":1, "as":0, "winner":"Colombia","venue":"Arrowhead Stadium" }
+    ],
+    "r16": [
+      { "date":"Jul  4", "home":"Canada",     "away":"Morocco",        "hs":0, "as":3, "winner":"Morocco",   "venue":"NRG Stadium, Houston",      "scorers":[{"n":"Matar","m":"23'"},{"n":"Amrabat","m":"45'"},{"n":"Boufal","m":"78'"}] },
+      { "date":"Jul  4", "home":"Paraguay",   "away":"France",         "hs":0, "as":1, "winner":"France",    "venue":"Lincoln Financial Field, Philadelphia", "scorers":[{"n":"Dembele","m":"61'"}] },
+      { "date":"Jul  5", "home":"Brazil",     "away":"Norway",         "hs":1, "as":2, "winner":"Norway",    "venue":"MetLife Stadium, East Rutherford", "scorers":[{"n":"Haaland","m":"18'"},{"n":"Haaland","m":"67'"},{"n":"Nunes","m":"53'"}] },
+      { "date":"Jul  6", "home":"Mexico",     "away":"England",        "hs":2, "as":3, "winner":"England",   "venue":"Estadio Azteca, Mexico City", "aet":true, "scorers":[{"n":"Kane","m":"64'"},{"n":"Bellingham","m":"88'"}] },
+      { "date":"Jul  6", "home":"Portugal",   "away":"Spain",          "hs":0, "as":1, "winner":"Spain",     "venue":"AT&T Stadium, Dallas",        "scorers":[{"n":"Oyarzabal","m":"52'"}] },
+      { "date":"Jul  7", "home":"United States","away":"Belgium",       "hs":1, "as":4, "winner":"Belgium", "venue":"Lumen Field, Seattle",        "scorers":[{"n":"Hazard","m":"33'"},{"n":"Lukaku","m":"55'"},{"n":"De Bruyne","m":"71'"},{"n":"Lukaku","m":"84'"}] },
+      { "date":"Jul  7", "home":"Argentina",  "away":"Egypt",          "hs":3, "as":2, "winner":"Argentina", "venue":"Mercedes-Benz Stadium, Atlanta", "aet":true, "scorers":[{"n":"Messi","m":"19'"},{"n":"Messi","m":"45'"},{"n":"Dybala","m":"82'"}] },
+      { "date":"Jul  7", "home":"Switzerland","away":"Colombia",        "hs":0, "as":0, "winner":"Switzerland","venue":"BC Place, Vancouver", "pens":"4-3" }
+    ],
+    "qf": [
+      { "date":"Jul 9",  "home":"France",   "away":"Morocco",     "hs":2, "as":0, "winner":"France",   "venue":"Boston Stadium, Foxborough", "scorers":[{"n":"Mbappé","m":"34'"},{"n":"Dembélé","m":"67'"}] },
+      { "date":"Jul 10", "home":"Spain",    "away":"Belgium",     "hs":null,"as":null,"venue":"SoFi Stadium, Los Angeles" },
+      { "date":"Jul 11", "home":"England",  "away":"Norway",      "hs":null,"as":null,"venue":"Hard Rock Stadium, Miami Gardens" },
+      { "date":"Jul 12", "home":"Argentina","away":"Switzerland",  "hs":null,"as":null,"venue":"Arrowhead Stadium, Kansas City" }
+    ],
+    "sf": [
+      { "id":"SF1", "date":"Jul 14", "winnerQF":[0,1], "venue":"AT&T Stadium, Dallas" },
+      { "id":"SF2", "date":"Jul 15", "winnerQF":[2,3], "venue":"Mercedes-Benz Stadium, Atlanta" }
+    ],
+    "thirdPlace": { "date":"Jul 18", "venue":"Hard Rock Stadium, Miami Gardens" },
+    "final": { "date":"Jul 19", "venue":"MetLife Stadium, East Rutherford, NJ" }
+  },
+
+  "groups": [
+    { "letter":"A","headerClass":"g-a","teams":[
+      { "name":"Mexico",        "pts":9,"gp":3,"w":3,"d":0,"l":0,"gd":6,"gf":6,"ga":0,"qa":true },
+      { "name":"South Africa",  "pts":4,"gp":3,"w":1,"d":1,"l":1,"gd":-1,"gf":2,"ga":3,"qa":true },
+      { "name":"South Korea",   "pts":3,"gp":3,"w":1,"d":0,"l":2,"gd":-1,"gf":2,"ga":3,"elim":true },
+      { "name":"Czechia",       "pts":1,"gp":3,"w":0,"d":1,"l":2,"gd":-4,"gf":2,"ga":6,"elim":true }
+    ]},
+    { "letter":"B","headerClass":"g-b","teams":[
+      { "name":"Switzerland",   "pts":7,"gp":3,"w":2,"d":1,"l":0,"gd":4,"gf":7,"ga":3,"qa":true },
+      { "name":"Canada",        "pts":4,"gp":3,"w":1,"d":1,"l":1,"gd":5,"gf":8,"ga":3,"qa":true },
+      { "name":"Bosnia and Herzegovina","pts":3,"gp":3,"w":0,"d":3,"l":0,"gd":-1,"gf":5,"ga":6,"elim":true },
+      { "name":"Qatar",         "pts":1,"gp":3,"w":0,"d":1,"l":2,"gd":-8,"gf":2,"ga":10,"elim":true }
+    ]},
+    { "letter":"C","headerClass":"g-c","teams":[
+      { "name":"Brazil",        "pts":7,"gp":3,"w":2,"d":1,"l":0,"gd":6,"gf":7,"ga":1,"qa":true },
+      { "name":"Morocco",       "pts":7,"gp":3,"w":2,"d":1,"l":0,"gd":3,"gf":6,"ga":3,"qa":true },
+      { "name":"Scotland",      "pts":3,"gp":3,"w":1,"d":0,"l":2,"gd":-3,"gf":1,"ga":4,"elim":true },
+      { "name":"Haiti",         "pts":0,"gp":3,"w":0,"d":0,"l":3,"gd":-6,"gf":2,"ga":8,"elim":true }
+    ]},
+    { "letter":"D","headerClass":"g-d","teams":[
+      { "name":"United States", "pts":6,"gp":3,"w":2,"d":0,"l":1,"gd":4,"gf":8,"ga":4,"qa":true },
+      { "name":"Australia",     "pts":4,"gp":3,"w":1,"d":1,"l":1,"gd":0,"gf":2,"ga":2,"qa":true },
+      { "name":"Paraguay",      "pts":3,"gp":3,"w":1,"d":0,"l":2,"gd":-2,"gf":1,"ga":3,"elim":true },
+      { "name":"Turkiye",       "pts":3,"gp":3,"w":1,"d":0,"l":2,"gd":-2,"gf":3,"ga":5,"elim":true }
+    ]},
+    { "letter":"E","headerClass":"g-e","teams":[
+      { "name":"Germany",       "pts":6,"gp":3,"w":2,"d":0,"l":1,"gd":6,"gf":10,"ga":4,"qa":true },
+      { "name":"Ivory Coast",   "pts":6,"gp":3,"w":2,"d":0,"l":1,"gd":2,"gf":4,"ga":2,"qa":true },
+      { "name":"Ecuador",       "pts":4,"gp":3,"w":1,"d":1,"l":1,"gd":0,"gf":2,"ga":2,"elim":true },
+      { "name":"Curacao",       "pts":1,"gp":3,"w":0,"d":1,"l":2,"gd":-8,"gf":1,"ga":9,"elim":true }
+    ]},
+    { "letter":"F","headerClass":"g-f","teams":[
+      { "name":"Netherlands",   "pts":7,"gp":3,"w":2,"d":1,"l":0,"gd":6,"gf":10,"ga":4,"qa":true },
+      { "name":"Japan",         "pts":5,"gp":3,"w":1,"d":2,"l":0,"gd":4,"gf":7,"ga":3,"qa":true },
+      { "name":"Sweden",        "pts":4,"gp":3,"w":1,"d":1,"l":1,"gd":0,"gf":7,"ga":7,"elim":true },
+      { "name":"Tunisia",       "pts":0,"gp":3,"w":0,"d":0,"l":3,"gd":-10,"gf":1,"ga":12,"elim":true }
+    ]},
+    { "letter":"G","headerClass":"g-7","teams":[
+      { "name":"Belgium",       "pts":5,"gp":3,"w":1,"d":2,"l":0,"gd":4,"gf":6,"ga":2,"qa":true },
+      { "name":"Egypt",         "pts":5,"gp":3,"w":1,"d":2,"l":0,"gd":2,"gf":5,"ga":3,"qa":true },
+      { "name":"Iran",          "pts":3,"gp":3,"w":0,"d":3,"l":0,"gd":0,"gf":3,"ga":3,"elim":true },
+      { "name":"New Zealand",   "pts":1,"gp":3,"w":0,"d":1,"l":2,"gd":-6,"gf":4,"ga":10,"elim":true }
+    ]},
+    { "letter":"H","headerClass":"g-8","teams":[
+      { "name":"Spain",         "pts":7,"gp":3,"w":2,"d":1,"l":0,"gd":5,"gf":5,"ga":0,"qa":true },
+      { "name":"Cape Verde",    "pts":3,"gp":3,"w":0,"d":3,"l":0,"gd":0,"gf":2,"ga":2,"elim":true },
+      { "name":"Uruguay",       "pts":2,"gp":3,"w":0,"d":2,"l":1,"gd":-1,"gf":3,"ga":4,"elim":true },
+      { "name":"Saudi Arabia",  "pts":2,"gp":3,"w":0,"d":2,"l":1,"gd":-4,"gf":1,"ga":5,"elim":true }
+    ]},
+    { "letter":"I","headerClass":"g-9","teams":[
+      { "name":"France",        "pts":9,"gp":3,"w":3,"d":0,"l":0,"gd":8,"gf":10,"ga":2,"qa":true },
+      { "name":"Norway",        "pts":6,"gp":3,"w":2,"d":0,"l":1,"gd":1,"gf":8,"ga":7,"qa":true },
+      { "name":"Senegal",       "pts":3,"gp":3,"w":1,"d":0,"l":2,"gd":-4,"gf":5,"ga":9,"elim":true },
+      { "name":"Iraq",          "pts":0,"gp":3,"w":0,"d":0,"l":3,"gd":-11,"gf":1,"ga":12,"elim":true }
+    ]},
+    { "letter":"J","headerClass":"g-10","teams":[
+      { "name":"Argentina",     "pts":9,"gp":3,"w":3,"d":0,"l":0,"gd":7,"gf":8,"ga":1,"qa":true },
+      { "name":"Austria",       "pts":4,"gp":3,"w":1,"d":1,"l":1,"gd":0,"gf":6,"ga":6,"qa":true },
+      { "name":"Algeria",       "pts":4,"gp":3,"w":1,"d":1,"l":1,"gd":-2,"gf":5,"ga":7,"elim":true },
+      { "name":"Jordan",        "pts":0,"gp":3,"w":0,"d":0,"l":3,"gd":-5,"gf":3,"ga":8,"elim":true }
+    ]},
+    { "letter":"K","headerClass":"g-11","teams":[
+      { "name":"Colombia",      "pts":7,"gp":3,"w":2,"d":1,"l":0,"gd":3,"gf":4,"ga":1,"qa":true },
+      { "name":"Portugal",      "pts":5,"gp":3,"w":1,"d":2,"l":0,"gd":5,"gf":6,"ga":1,"qa":true },
+      { "name":"DR Congo",      "pts":2,"gp":3,"w":0,"d":2,"l":1,"gd":-1,"gf":3,"ga":4,"elim":true },
+      { "name":"Uzbekistan",    "pts":0,"gp":3,"w":0,"d":0,"l":3,"gd":-9,"gf":2,"ga":11,"elim":true }
+    ]},
+    { "letter":"L","headerClass":"g-12","teams":[
+      { "name":"England",       "pts":7,"gp":3,"w":2,"d":1,"l":0,"gd":4,"gf":6,"ga":2,"qa":true },
+      { "name":"Croatia",       "pts":6,"gp":3,"w":2,"d":0,"l":1,"gd":0,"gf":5,"ga":5,"elim":true },
+      { "name":"Ghana",         "pts":4,"gp":3,"w":1,"d":1,"l":1,"gd":0,"gf":2,"ga":2,"elim":true },
+      { "name":"Panama",        "pts":0,"gp":3,"w":0,"d":0,"l":3,"gd":-9,"gf":0,"ga":9,"elim":true }
+    ]}
+  ],
+
+  "groupMatches": [
+    { "date":"Jun 11","group":"A","home":"Mexico","away":"South Korea","hs":1,"as":0 },
+    { "date":"Jun 11","group":"A","home":"South Africa","away":"Czechia","hs":1,"as":1 },
+    { "date":"Jun 16","group":"A","home":"South Korea","away":"South Africa","hs":0,"as":1 },
+    { "date":"Jun 16","group":"A","home":"Czechia","away":"Mexico","hs":0,"as":3 },
+    { "date":"Jun 21","group":"A","home":"South Korea","away":"Czechia","hs":0,"as":1 },
+    { "date":"Jun 21","group":"A","home":"Mexico","away":"South Africa","hs":3,"as":0 },
+    { "date":"Jun 12","group":"B","home":"Switzerland","away":"Qatar","hs":2,"as":0 },
+    { "date":"Jun 12","group":"B","home":"Canada","away":"Bosnia and Herzegovina","hs":1,"as":1 },
+    { "date":"Jun 17","group":"B","home":"Bosnia and Herzegovina","away":"Switzerland","hs":1,"as":4 },
+    { "date":"Jun 17","group":"B","home":"Qatar","away":"Canada","hs":1,"as":3 },
+    { "date":"Jun 22","group":"B","home":"Bosnia and Herzegovina","away":"Qatar","hs":1,"as":0 },
+    { "date":"Jun 22","group":"B","home":"Switzerland","away":"Canada","hs":2,"as":1 },
+    { "date":"Jun 12","group":"C","home":"Brazil","away":"Scotland","hs":3,"as":0 },
+    { "date":"Jun 12","group":"C","home":"Morocco","away":"Haiti","hs":2,"as":0 },
+    { "date":"Jun 17","group":"C","home":"Haiti","away":"Brazil","hs":2,"as":4 },
+    { "date":"Jun 17","group":"C","home":"Scotland","away":"Morocco","hs":0,"as":1 },
+    { "date":"Jun 22","group":"C","home":"Haiti","away":"Scotland","hs":0,"as":3 },
+    { "date":"Jun 22","group":"C","home":"Morocco","away":"Brazil","hs":1,"as":2 },
+    { "date":"Jun 13","group":"D","home":"United States","away":"Turkiye","hs":2,"as":3 },
+    { "date":"Jun 13","group":"D","home":"Australia","away":"Paraguay","hs":0,"as":0 },
+    { "date":"Jun 18","group":"D","home":"Paraguay","away":"United States","hs":1,"as":0 },
+    { "date":"Jun 18","group":"D","home":"Turkiye","away":"Australia","hs":0,"as":2 },
+    { "date":"Jun 23","group":"D","home":"Paraguay","away":"Turkiye","hs":1,"as":0 },
+    { "date":"Jun 23","group":"D","home":"Australia","away":"United States","hs":0,"as":2 },
+    { "date":"Jun 13","group":"E","home":"Germany","away":"Curacao","hs":2,"as":0 },
+    { "date":"Jun 13","group":"E","home":"Ivory Coast","away":"Ecuador","hs":1,"as":0 },
+    { "date":"Jun 18","group":"E","home":"Ecuador","away":"Germany","hs":2,"as":1 },
+    { "date":"Jun 18","group":"E","home":"Curacao","away":"Ivory Coast","hs":0,"as":2 },
+    { "date":"Jun 23","group":"E","home":"Ecuador","away":"Curacao","hs":0,"as":0 },
+    { "date":"Jun 23","group":"E","home":"Ivory Coast","away":"Germany","hs":1,"as":2 },
+    { "date":"Jun 14","group":"F","home":"Netherlands","away":"Tunisia","hs":3,"as":1 },
+    { "date":"Jun 14","group":"F","home":"Japan","away":"Sweden","hs":1,"as":1 },
+    { "date":"Jun 19","group":"F","home":"Sweden","away":"Netherlands","hs":1,"as":5 },
+    { "date":"Jun 19","group":"F","home":"Tunisia","away":"Japan","hs":1,"as":4 },
+    { "date":"Jun 24","group":"F","home":"Sweden","away":"Tunisia","hs":5,"as":1 },
+    { "date":"Jun 24","group":"F","home":"Japan","away":"Netherlands","hs":1,"as":2 },
+    { "date":"Jun 14","group":"G","home":"Egypt","away":"New Zealand","hs":3,"as":1 },
+    { "date":"Jun 14","group":"G","home":"Belgium","away":"Iran","hs":1,"as":1 },
+    { "date":"Jun 19","group":"G","home":"Iran","away":"Egypt","hs":1,"as":1 },
+    { "date":"Jun 19","group":"G","home":"New Zealand","away":"Belgium","hs":1,"as":5 },
+    { "date":"Jun 24","group":"G","home":"Iran","away":"New Zealand","hs":1,"as":1 },
+    { "date":"Jun 24","group":"G","home":"Belgium","away":"Egypt","hs":1,"as":1 },
+    { "date":"Jun 15","group":"H","home":"Spain","away":"Saudi Arabia","hs":4,"as":0 },
+    { "date":"Jun 15","group":"H","home":"Cape Verde","away":"Uruguay","hs":2,"as":2 },
+    { "date":"Jun 20","group":"H","home":"Uruguay","away":"Spain","hs":0,"as":1 },
+    { "date":"Jun 20","group":"H","home":"Saudi Arabia","away":"Cape Verde","hs":0,"as":2 },
+    { "date":"Jun 25","group":"H","home":"Uruguay","away":"Cape Verde","hs":1,"as":2 },
+    { "date":"Jun 25","group":"H","home":"Spain","away":"Saudi Arabia","hs":0,"as":0 },
+    { "date":"Jun 15","group":"I","home":"France","away":"Iraq","hs":4,"as":0 },
+    { "date":"Jun 15","group":"I","home":"Norway","away":"Senegal","hs":2,"as":1 },
+    { "date":"Jun 20","group":"I","home":"Senegal","away":"France","hs":0,"as":5 },
+    { "date":"Jun 20","group":"I","home":"Iraq","away":"Norway","hs":1,"as":2 },
+    { "date":"Jun 25","group":"I","home":"Senegal","away":"Iraq","hs":2,"as":1 },
+    { "date":"Jun 25","group":"I","home":"Norway","away":"France","hs":1,"as":4 },
+    { "date":"Jun 15","group":"J","home":"Argentina","away":"Jordan","hs":3,"as":1 },
+    { "date":"Jun 15","group":"J","home":"Austria","away":"Algeria","hs":3,"as":3 },
+    { "date":"Jun 20","group":"J","home":"Algeria","away":"Argentina","hs":1,"as":2 },
+    { "date":"Jun 20","group":"J","home":"Jordan","away":"Austria","hs":1,"as":3 },
+    { "date":"Jun 25","group":"J","home":"Algeria","away":"Jordan","hs":2,"as":1 },
+    { "date":"Jun 25","group":"J","home":"Argentina","away":"Austria","hs":2,"as":0 },
+    { "date":"Jun 16","group":"K","home":"Colombia","away":"Uzbekistan","hs":3,"as":1 },
+    { "date":"Jun 16","group":"K","home":"Portugal","away":"DR Congo","hs":0,"as":0 },
+    { "date":"Jun 21","group":"K","home":"DR Congo","away":"Colombia","hs":0,"as":1 },
+    { "date":"Jun 21","group":"K","home":"Uzbekistan","away":"Portugal","hs":0,"as":5 },
+    { "date":"Jun 26","group":"K","home":"DR Congo","away":"Uzbekistan","hs":1,"as":1 },
+    { "date":"Jun 26","group":"K","home":"Portugal","away":"Colombia","hs":0,"as":0 },
+    { "date":"Jun 16","group":"L","home":"England","away":"Panama","hs":2,"as":0 },
+    { "date":"Jun 16","group":"L","home":"Ghana","away":"Croatia","hs":1,"as":2 },
+    { "date":"Jun 21","group":"L","home":"Croatia","away":"England","hs":2,"as":4 },
+    { "date":"Jun 21","group":"L","home":"Panama","away":"Ghana","hs":0,"as":1 },
+    { "date":"Jun 26","group":"L","home":"Croatia","away":"Panama","hs":1,"as":0 },
+    { "date":"Jun 26","group":"L","home":"England","away":"Ghana","hs":1,"as":0 }
+  ],
+
+  "scorers": [
+    { "rank":1, "name":"Kylian Mbappé",         "team":"France",        "goals":8, "club":"Real Madrid" },
+    { "rank":1, "name":"Lionel Messi",               "team":"Argentina",     "goals":8, "club":"Inter Miami CF" },
+    { "rank":3, "name":"Erling Haaland",             "team":"Norway",        "goals":7, "club":"Manchester City" },
+    { "rank":4, "name":"Harry Kane",                 "team":"England",       "goals":6, "club":"Bayern Munich" },
+    { "rank":5, "name":"Ousmane Dembélé",  "team":"France",        "goals":5, "club":"Paris Saint-Germain" },
+    { "rank":6, "name":"Vinicius Junior",            "team":"Brazil",        "goals":4, "club":"Real Madrid" },
+    { "rank":6, "name":"Ismaila Sarr",               "team":"Senegal",       "goals":4, "club":"Crystal Palace" },
+    { "rank":6, "name":"Mikel Oyarzabal",            "team":"Spain",         "goals":4, "club":"Real Sociedad" },
+    { "rank":6, "name":"Julian Quiñones",        "team":"Mexico",        "goals":4, "club":"Al-Qadsiah" },
+    { "rank":6, "name":"Jude Bellingham",            "team":"England",       "goals":4, "club":"Real Madrid" },
+    { "rank":11, "name":"Folarin Balogun",           "team":"USA",           "goals":3, "club":"Monaco" },
+    { "rank":11,"name":"Brian Brobbey",              "team":"Netherlands",   "goals":3, "club":"Liverpool" },
+    { "rank":11,"name":"Matheus Cunha",              "team":"Brazil",        "goals":3, "club":"Manchester United" },
+    { "rank":11,"name":"Jonathan David",             "team":"Canada",        "goals":3, "club":"Juventus" },
+    { "rank":11,"name":"Cody Gakpo",                "team":"Netherlands",   "goals":3, "club":"Liverpool" },
+    { "rank":11,"name":"Kai Havertz",               "team":"Germany",       "goals":3, "club":"Arsenal" },
+    { "rank":11,"name":"Raul Jimenez",              "team":"Mexico",        "goals":3, "club":"Fulham" },
+    { "rank":11,"name":"Romelu Lukaku",             "team":"Belgium",       "goals":3, "club":"Napoli" },
+    { "rank":11,"name":"Johan Manzambi",            "team":"Switzerland",   "goals":3, "club":"SC Freiburg" },
+    { "rank":11,"name":"Cristiano Ronaldo",         "team":"Portugal",      "goals":3, "club":"Al-Nassr" },
+    { "rank":11,"name":"Ismael Saibari",            "team":"Morocco",       "goals":3, "club":"PSV Eindhoven" },
+    { "rank":11,"name":"Deniz Undav",               "team":"Germany",       "goals":3, "club":"VfB Stuttgart" },
+    { "rank":11,"name":"Yoane Wissa",               "team":"DR Congo",      "goals":3, "club":"Newcastle United" },
+    { "rank":11,"name":"Elijah Just",               "team":"New Zealand",   "goals":3, "club":"Motherwell" }
+  ],
+
+  "venues": [
+    { "name":"MetLife Stadium",          "city":"East Rutherford, NJ",        "country":"USA",    "capacity":"82,500","flag":"usa",  "matches":"Final, Semi-final, QF potential" },
+    { "name":"AT&T Stadium",             "city":"Arlington, TX (Dallas)",     "country":"USA",    "capacity":"82,000","flag":"usa",  "matches":"Semi-final, R16, R32" },
+    { "name":"Mercedes-Benz Stadium",    "city":"Atlanta, GA",                "country":"USA",    "capacity":"75,000","flag":"usa",  "matches":"Semi-final, R16, R32" },
+    { "name":"GEHA Field at Arrowhead",  "city":"Kansas City, MO",            "country":"USA",    "capacity":"76,000","flag":"usa",  "matches":"QF (Jul 12), R16 potential" },
+    { "name":"NRG Stadium",              "city":"Houston, TX",                "country":"USA",    "capacity":"72,000","flag":"usa",  "matches":"R16 (Jul 4), QF potential" },
+    { "name":"SoFi Stadium",             "city":"Los Angeles, CA",            "country":"USA",    "capacity":"70,000","flag":"usa",  "matches":"QF (Jul 10), R32" },
+    { "name":"Lincoln Financial Field",  "city":"Philadelphia, PA",           "country":"USA",    "capacity":"69,000","flag":"usa",  "matches":"R16 (Jul 4)" },
+    { "name":"Lumen Field",              "city":"Seattle, WA",                "country":"USA",    "capacity":"69,000","flag":"usa",  "matches":"R16 (Jul 7), R32" },
+    { "name":"Gillette Stadium",         "city":"Foxborough, MA",             "country":"USA",    "capacity":"65,000","flag":"usa",  "matches":"R32 (Jul 1)" },
+    { "name":"Hard Rock Stadium",        "city":"Miami Gardens, FL",          "country":"USA",    "capacity":"65,000","flag":"usa",  "matches":"QF (Jul 11), 3rd Place, R32" },
+    { "name":"Boston Stadium",           "city":"Foxborough, MA",             "country":"USA",    "capacity":"65,878","flag":"usa",  "matches":"QF (Jul 9)" },
+    { "name":"Levi's Stadium",           "city":"Santa Clara, CA",            "country":"USA",    "capacity":"71,000","flag":"usa",  "matches":"QF potential, R32" },
+    { "name":"Estadio Azteca",           "city":"Mexico City",                "country":"Mexico", "capacity":"87,000","flag":"mex",  "matches":"R16 (Jul 6), Opening Match" },
+    { "name":"Estadio BBVA",             "city":"Monterrey (Guadalupe)",      "country":"Mexico", "capacity":"53,500","flag":"mex",  "matches":"R32 (Jun 29)" },
+    { "name":"BC Place",                 "city":"Vancouver",                  "country":"Canada", "capacity":"54,000","flag":"can",  "matches":"R16 (Jul 7), R32 x2" },
+    { "name":"BMO Field",                "city":"Toronto",                    "country":"Canada", "capacity":"45,700","flag":"can",  "matches":"R32 x2" }
+  ],
+
+  "storylines": [
+    { "title":"The Moroccan Miracle — Two Penalty Shootouts",        "tag":"narrative",   "cssClass":"magic",
+      "body":"Morocco are the fairytale of this World Cup. They defeated the Netherlands in a tense Round of 32 penalty shootout (3-2) after a 1-1 draw, then cruised past Canada 3-0 in the Round of 16 before facing France in the quarter-finals. Their discipline, organization, and never-say-die attitude have captivated fans across Africa and the world." },
+    { "title":"Norway Upset the Samba — Brazil Out",                 "tag":"upset",       "cssClass":"upset",
+      "body":"One of the biggest shocks in World Cup history: Brazil were blown away 1-2 by Norway in the Round of 16. Haaland (2 goals) dismantled a Brazil side that topped Group C with 7 points and +6 goal difference. Brazil's golden generation, led by Vinicius Jr and Neymar, saw their tournament end in devastating fashion." },
+    { "title":"Paraguay Punch Above Their Weight",                   "tag":"upset",       "cssClass":"upset",
+      "body":"Paraguay knocked out Germany on penalties (4-3) in a dramatic Round of 32 clash. The South American side held the host nation to a 1-1 draw, then won the shootout — their first-ever World Cup knockout-stage victory. Paraguay remain alive after falling short against France 0-1 in the R16." },
+    { "title":"Mbappé & Messi — Golden Boot Race Heats Up",    "tag":"golden-boot", "cssClass":"golden",
+      "body":"Kylian Mbappé and Lionel Messi are locked in a thrilling battle for the Golden Boot, both sitting on 8 goals. Mbappé leads with 6 appearances (1.33 avg) while Messi has done it in just 5 matches (1.60 avg). Mbappé scored twice against Morocco in the QF. With 3 matches remaining, either could pull away." },
+    { "title":"England's Extra-Time Escape vs Mexico",               "tag":"narrative",   "cssClass":"",
+      "body":"England survived a heart-stopping moment at Estadio Azteca, edging Mexico 3-2 after extra time in the Round of 16. Julian Quiñones had given Mexico the lead, but England's resilience shone through with late goals to advance — keeping their Golden Boot hopes alive with Kane (6) and Bellingham (4) on target." },
+    { "title":"Belgium's Statement Win Over USA",                    "tag":"upset",       "cssClass":"upset",
+      "body":"Belgium ran out 4-1 winners against the United States in a Round of 16 match that showcased their attacking firepower. Lukaku (3 goals at the tournament) was instrumental as Belgium advanced to face Spain in the quarter-finals — setting up a mouth-watering clash." },
+    { "title":"Switzerland's Penalty Specialist",                    "tag":"narrative",   "cssClass":"magic",
+      "body":"Switzerland have now won two consecutive penalty shootouts — first against Algeria (2-0, 4-3 pens) in the R32, then against Colombia (0-0, 4-3 pens) in the R16. Their composure from the spot has been a defining trait of their remarkable tournament run." },
+    { "title":"The Road to MetLife",                                 "tag":"narrative",   "cssClass":"",
+      "body":"Everything comes down to July 19 at MetLife Stadium in East Rutherford, New Jersey. The four semi-finalists will battle for a place in the Final — the biggest club football stadium in North America, home to two Super Bowls and now, one World Cup Final." }
+  ],
+
+  "timeline": [
+    { "date":"Jun 11",   "title":"Opening Match",          "desc":"Mexico 1-0 South Korea — Estadio Azteca, Mexico City",     "status":"past" },
+    { "date":"Jun 11 – 27","title":"Group Stage","desc":"72 matches across 12 groups (A–L)","status":"past" },
+    { "date":"Jun 28 – Jul 3","title":"Round of 32","desc":"16 matches — 48 → 16 teams advance","status":"past" },
+    { "date":"Jul 4 – 7","title":"Round of 16",       "desc":"8 matches — Brazil eliminated by Norway, Mexico down to England","status":"past" },
+    { "date":"Jul 9",    "title":"Quarter-final 1 ✓", "desc":"France 2-0 Morocco — Mbappé & Dembélé score","status":"current" },
+    { "date":"Jul 10",   "title":"Quarter-final 2",        "desc":"Spain vs Belgium — SoFi Stadium, Los Angeles","status":"upcoming" },
+    { "date":"Jul 11",   "title":"Quarter-final 3",        "desc":"England vs Norway — Hard Rock Stadium, Miami","status":"upcoming" },
+    { "date":"Jul 12",   "title":"Quarter-final 4",        "desc":"Argentina vs Switzerland — Arrowhead Stadium, Kansas City","status":"upcoming" },
+    { "date":"Jul 14",   "title":"Semi-final 1",           "desc":"Winner QF1/QF2 — AT&T Stadium, Dallas","status":"upcoming" },
+    { "date":"Jul 15",   "title":"Semi-final 2",           "desc":"Winner QF3/QF4 — Mercedes-Benz Stadium, Atlanta","status":"upcoming" },
+    { "date":"Jul 18",   "title":"Third-Place Match",      "desc":"Hard Rock Stadium, Miami Gardens","status":"upcoming" },
+    { "date":"Jul 19",   "title":"FINAL 🏆",     "desc":"MetLife Stadium, East Rutherford, NJ — World Champion crowned","status":"upcoming" }
+  ],
+
+  "eliminated": {
+    "r32": ["South Africa","Japan","Germany","Netherlands","Ivory Coast","Sweden",
+            "Ecuador","DR Congo","Senegal","Austria","Croatia",
+            "Algeria","Egypt","Cape Verde","Ghana"],
+    "r16": ["Canada","Paraguay","Brazil","Mexico","Portugal",
+            "United States","Egypt","Colombia"],
+    "group": ["Qatar","Panama","Tunisia","Turkiye","Haiti","Jordan",
+              "Czechia","Curacao","Iraq","Uruguay","Saudi Arabia",
+              "New Zealand","Scotland","Uzbekistan","Iran"]
+  }
+}
