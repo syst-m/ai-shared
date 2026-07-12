@@ -811,10 +811,10 @@ body {
     <div class="countdown" id="countdown"></div>
     <div class="hero-stats">
       <div class="hero-stat"><div class="num">48</div><div class="label">Teams</div></div>
-      <div class="hero-stat"><div class="num">96</div><div class="label">Matches Played</div></div>
-      <div class="hero-stat"><div class="num">218</div><div class="label">Total Goals</div></div>
-      <div class="hero-stat"><div class="num">8</div><div class="label">Matches Left</div></div>
-      <div class="hero-stat"><div class="num">8</div><div class="label">Teams Left</div></div>
+      <div class="hero-stat"><div class="num">84</div><div class="label">Matches Played</div></div>
+      <div class="hero-stat"><div class="num">192</div><div class="label">Total Goals</div></div>
+      <div class="hero-stat"><div class="num">20</div><div class="label">Matches Left</div></div>
+      <div class="hero-stat"><div class="num">20</div><div class="label">Teams Left</div></div>
     </div>
   </div>
 </header>
@@ -824,47 +824,16 @@ body {
   <div class="progress-card">
     <div class="progress-label">
       <span>Tournament Progress</span>
-      <span>96 / 104 matches</span>
+      <span>84 / 104 matches</span>
     </div>
     <div class="progress-bar">
-      <div class="progress-fill" style="width: 92.3%"></div>
+      <div class="progress-fill" style="width: 80.8%"></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ TAB 0: ROUND OF 16 (NEW) ═══ -->
-  <div class="tab-content" id="tab-r16">
-
-    <!-- R16 Completed -->
-    <section>
-      <h2 class="section-title"><span class="icon gold">🔥</span> Round of 16 — Results</h2>
-      <p class="result-subtitle">July 8 – 9 · 4 of 8 matches completed</p>
-      <div class="matches-grid" id="r16Results"></div>
-    </section>
-
-    <!-- R16 Upcoming -->
-    <section>
-      <h2 class="section-title"><span class="icon orange">📅</span> Round of 16 — Upcoming</h2>
-      <p class="result-subtitle">July 10 – 13 · 4 matches remaining</p>
-      <div class="matches-grid" id="r16Upcoming"></div>
-    </section>
-
-    <!-- Quarterfinal Projected Bracket -->
-    <section>
-      <h2 class="section-title"><span class="icon blue">🏆</span> Quarterfinals — Projected Matchups</h2>
-      <p style="font-size:0.88rem;color:var(--gray-600);margin-bottom:1rem;">
-        Winners of R16 advance. Bracket fills in as results come in.
-      </p>
-      <div class="bracket-container">
-        <div class="bracket-table-wrap" id="qfBracket"></div>
-      </div>
-    </section>
-
-  </div>
-
 <!-- Tab Navigation -->
 <nav class="tab-nav" id="tabNav">
-  <button class="tab-btn" data-tab="r16">🔥 Round of 16</button>
   <button class="tab-btn active" data-tab="knockout">⚔️ Knockout</button>
   <button class="tab-btn" data-tab="groupstage">🏟️ Group Stage</button>
   <button class="tab-btn" data-tab="standings">📊 Standings</button>
@@ -882,14 +851,14 @@ body {
     <!-- Round of 32: Completed -->
     <section>
       <h2 class="section-title"><span class="icon red">⚔</span> Round of 32 — Results</h2>
-      <p class="result-subtitle">June 28 – July 2 · 16 of 16 matches completed ✅</p>
+      <p class="result-subtitle">June 28 – July 2 · 12 of 16 matches completed</p>
       <div class="matches-grid" id="r32Results"></div>
     </section>
 
     <!-- Round of 32: Upcoming -->
     <section>
       <h2 class="section-title"><span class="icon orange">⏳</span> Round of 32 — Upcoming</h2>
-      <p class="result-subtitle">July 2 – 3 · All completed</p>
+      <p class="result-subtitle">July 2 – 3 · 4 matches remaining</p>
       <div class="matches-grid" id="r32Upcoming"></div>
     </section>
 
@@ -1043,37 +1012,16 @@ var r32Completed = [
   { date:'Jul 1', home:'Belgium', away:'Senegal', hsc:3, ascore:2, winner:'Belgium', venue:'Lumen Field', pens:false },
   { date:'Jul 1', home:'United States', away:'Bosnia and Herzegovina', hsc:2, ascore:0, winner:'United States', venue:'Gillette Stadium', pens:false },
   { date:'Jul 2', home:'Spain', away:'Austria', hsc:3, ascore:0, winner:'Spain', venue:'Estadio Azteca', pens:false },
-  { date:'Jul 2', home:'Portugal', away:'Croatia', hsc:2, ascore:1, winner:'Portugal', venue:'Rogers Centre', pens:false },
-  { date:'Jul 2', home:'Switzerland', away:'Algeria', hsc:1, ascore:0, winner:'Switzerland', venue:'BC Place', pens:false },
-  { date:'Jul 3', home:'Australia', away:'Egypt', hsc:2, ascore:2, winner:'Egypt', venue:'AT&T Stadium', pens:'4-3' },
-  { date:'Jul 3', home:'Argentina', away:'Cape Verde', hsc:4, ascore:0, winner:'Argentina', venue:'Hard Rock Stadium', pens:false },
-  { date:'Jul 3', home:'Colombia', away:'Ghana', hsc:3, ascore:1, winner:'Colombia', venue:'Arrowhead Stadium', pens:false }
+  { date:'Jul 2', home:'Portugal', away:'Croatia', hsc:2, ascore:1, winner:'Portugal', venue:'Rogers Centre', pens:false }
 ];
 
 /* ─── ROUND OF 32: UPCOMING ─── */
-var r32Upcoming = []; // All completed ✅
-/* ─── ROUND OF 16: RESULTS ─── */
-var r16Results = [
-  { date:'Jul 8', home:'Canada', away:'Switzerland', hsc:2, ascore:1, winner:'Canada', venue:'NRG Stadium, Houston', pens:false },
-  { date:'Jul 8', home:'France', away:'Netherlands', hsc:3, ascore:2, winner:'France', venue:'Lincoln Financial Field, Philadelphia', pens:'3-3' },
-  { date:'Jul 9', home:'Brazil', away:'Norway', hsc:1, ascore:0, winner:'Brazil', venue:'MetLife Stadium, East Rutherford', pens:false },
-  { date:'Jul 9', home:'England', away:'Mexico', hsc:2, ascore:1, winner:'England', venue:'Estadio Azteca, Mexico City', pens:false }
+var r32Upcoming = [
+  { date:'Jul 2', home:'Switzerland', away:'Algeria', hsc:null, ascore:null, venue:'BC Place' },
+  { date:'Jul 3', home:'Australia', away:'Egypt', hsc:null, ascore:null, venue:'AT&T Stadium' },
+  { date:'Jul 3', home:'Argentina', away:'Cape Verde', hsc:null, ascore:null, venue:'Hard Rock Stadium' },
+  { date:'Jul 3', home:'Colombia', away:'Ghana', hsc:null, ascore:null, venue:'Arrowhead Stadium' }
 ];
-var r16Upcoming = [
-  { date:'Jul 10', home:'Spain', away:'Portugal', hsc:null, ascore:null, venue:'AT&T Stadium, Dallas', venueDetail:'7:00 PM ET' },
-  { date:'Jul 10', home:'Belgium', away:'United States', hsc:null, ascore:null, venue:'Lumen Field, Seattle', venueDetail:'9:30 PM ET' },
-  { date:'Jul 12', home:'Argentina', away:'Colombia', hsc:null, ascore:null, venue:'SoFi Stadium, Los Angeles', venueDetail:'8:00 PM ET' },
-  { date:'Jul 13', home:'Egypt', away:'Germany', hsc:null, ascore:null, venue:'Fiserv Forum, Milwaukee', venueDetail:'7:00 PM ET' }
-];
-
-/* ─── QUARTERFINAL PROJECTED BRACKET ─── */
-var qfBracket = [
-  { slot:'QF1', home:'Canada', away:'France', venue:'MetLife Stadium, East Rutherford', date:'Jul 14' },
-  { slot:'QF2', home:'Brazil', away:'England', venue:'SoFi Stadium, Los Angeles', date:'Jul 15' },
-  { slot:'QF3', home:'Spain', away:'Portugal', venue:'Hard Rock Stadium, Miami', date:'Jul 16' },
-  { slot:'QF4', home:'Belgium', away:'Argentina', venue:'NRG Stadium, Houston', date:'Jul 17' }
-];
-
 
 /* ─── ROUND OF 16: PROJECTED BRACKET ─── */
 var r16Bracket = [
@@ -1976,197 +1924,6 @@ function renderKnockoutMatch(m, headerClass, headerText) {
   }
 })();
 
-
-/* ================================================================
-   RENDER ROUND OF 16 RESULTS
-   ================================================================ */
-(function renderR16Results() {
-  var grid = document.getElementById('r16Results');
-  if (!grid || !window.r16Results) return;
-
-  window.r16Results.forEach(function(m) {
-    var card = document.createElement('div');
-    card.className = 'match-card';
-    var header = document.createElement('div');
-    header.className = 'match-card-header sf';
-    header.innerHTML = '<span>🏆</span> Round of 16 · <span>' + m.date + '</span>';
-
-    var body = document.createElement('div');
-    body.className = 'match-card-body';
-
-    var row1 = document.createElement('div');
-    row1.className = 'match-row';
-    if (m.winner === m.home) row1.classList.add('winner');
-    var hCircle = document.createElement('span');
-    hCircle.className = 'team-circle small';
-    hCircle.style.background = teamColor(m.home);
-    hCircle.textContent = teamInitials(m.home);
-    var hTeam = document.createElement('span');
-    hTeam.className = 'team-name';
-    hTeam.textContent = m.home;
-
-    row1.appendChild(hCircle);
-    row1.appendChild(hTeam);
-    body.appendChild(row1);
-
-    var score = document.createElement('div');
-    score.style.cssText = 'text-align:center;font-size:0.82rem;color:var(--gray-600);margin-top:0.2rem;';
-    score.innerHTML = '<strong>' + m.hsc + '</strong> — <strong>' + m.ascore + '</strong>';
-    body.appendChild(score);
-
-    var row2 = document.createElement('div');
-    row2.className = 'match-row';
-    if (m.winner === m.away) row2.classList.add('winner');
-    var aCircle = document.createElement('span');
-    aCircle.className = 'team-circle small';
-    aCircle.style.background = teamColor(m.away);
-    aCircle.textContent = teamInitials(m.away);
-    var aTeam = document.createElement('span');
-    aTeam.className = 'team-name';
-    aTeam.textContent = m.away;
-
-    row2.appendChild(aTeam);
-    row2.appendChild(aCircle);
-    body.appendChild(row2);
-
-    if (m.pens && m.pens !== 'false') {
-      var penNote = document.createElement('div');
-      penNote.className = 'penalty-note';
-      penNote.textContent = 'Penalties: ' + m.pens;
-      body.appendChild(penNote);
-    }
-
-    if (m.venue) {
-      var venue = document.createElement('div');
-      venue.style.cssText = 'font-size:0.68rem;color:var(--gray-400);text-align:center;margin-top:0.2rem;';
-      venue.textContent = '📍 ' + m.venue;
-      body.appendChild(venue);
-    }
-
-    card.appendChild(header);
-    card.appendChild(body);
-    grid.appendChild(card);
-  });
-})();
-
-/* ================================================================
-   RENDER ROUND OF 16 UPCOMING
-   ================================================================ */
-(function renderR16Upcoming() {
-  var grid = document.getElementById('r16Upcoming');
-  if (!grid || !window.r16Upcoming) return;
-
-  window.r16Upcoming.forEach(function(m) {
-    var card = document.createElement('div');
-    card.className = 'match-card';
-    var header = document.createElement('div');
-    header.className = 'match-card-header sf';
-    header.innerHTML = '<span>⏳</span> Round of 16 · <span>' + m.date + '</span>';
-
-    var body = document.createElement('div');
-    body.className = 'match-card-body';
-
-    var row1 = document.createElement('div');
-    row1.className = 'match-row';
-    var hCircle = document.createElement('span');
-    hCircle.className = 'team-circle small';
-    hCircle.style.background = teamColor(m.home);
-    hCircle.textContent = teamInitials(m.home);
-    var hTeam = document.createElement('span');
-    hTeam.className = 'team-name';
-    hTeam.textContent = m.home;
-
-    row1.appendChild(hCircle);
-    row1.appendChild(hTeam);
-    body.appendChild(row1);
-
-    var score = document.createElement('div');
-    score.style.cssText = 'text-align:center;font-size:0.82rem;color:var(--gray-400);margin-top:0.3rem;';
-    score.textContent = 'vs';
-    body.appendChild(score);
-
-    var row2 = document.createElement('div');
-    row2.className = 'match-row';
-    var aCircle = document.createElement('span');
-    aCircle.className = 'team-circle small';
-    aCircle.style.background = teamColor(m.away);
-    aCircle.textContent = teamInitials(m.away);
-    var aTeam = document.createElement('span');
-    aTeam.className = 'team-name';
-    aTeam.textContent = m.away;
-
-    row2.appendChild(aTeam);
-    row2.appendChild(aCircle);
-    body.appendChild(row2);
-
-    if (m.venueDetail) {
-      var time = document.createElement('div');
-      time.style.cssText = 'font-size:0.78rem;color:var(--blue-mid);text-align:center;margin-top:0.3rem;font-weight:600;';
-      time.textContent = m.venueDetail;
-      body.appendChild(time);
-    }
-
-    if (m.venue) {
-      var venue = document.createElement('div');
-      venue.style.cssText = 'font-size:0.68rem;color:var(--gray-400);text-align:center;margin-top:0.2rem;';
-      venue.textContent = '📍 ' + m.venue;
-      body.appendChild(venue);
-    }
-
-    var info = document.createElement('div');
-    info.style.textAlign = 'center';
-    var st = document.createElement('span');
-    st.className = 'status upcoming';
-    st.textContent = 'Upcoming';
-    info.appendChild(st);
-    body.appendChild(info);
-
-    card.appendChild(header);
-    card.appendChild(body);
-    grid.appendChild(card);
-  });
-})();
-
-/* ================================================================
-   RENDER QUARTERFINAL BRACKET
-   ================================================================ */
-(function renderQFBracket() {
-  var container = document.getElementById('qfBracket');
-  if (!container || !window.qfBracket) return;
-
-  var table = '<table class="bracket-table"><thead><tr>'
-    + '<th colspan="2">Match</th><th>Date</th><th>Venue</th></tr></thead><tbody>';
-
-  window.qfBracket.forEach(function(m) {
-    var t = document.createElement('div');
-    t.className = 'bracket-match';
-    t.innerHTML = '<div class="bm-teams">'
-      + '<div class="bm-team winner"><span class="bm-circle" style="background:#'+teamColor(m.home).substring(1)+'">'+teamInitials(m.home)+'</span><span class="bm-name">'+m.home+'</span><span class="bm-score">?</span></div>'
-      + '<div class="bm-team"><span class="bm-circle" style="background:#'+teamColor(m.away).substring(1)+'">'+teamInitials(m.away)+'</span><span class="bm-name">'+m.away+'</span><span class="bm-score">?</span></div>'
-      + '</div><div class="bm-tbd">TBD</div>';
-    table += '<tr><td colspan="4"></td></tr>';
-    table += '<tr><td colspan="2"><div id="qf-'+m.slot+'"></div></td><td>'+m.date+'</td><td>'+m.venue+'</td></tr>';
-  });
-
-  table += '</tbody></table>';
-  container.innerHTML = '';
-  container.appendChild(document.createElement('table')).outerHTML = '<table class="bracket-table"><thead><tr><th colspan="2">Match</th><th>Date</th><th>Venue</th></tr></thead><tbody>';
-  
-  window.qfBracket.forEach(function(m) {
-    var row = container.querySelector('tbody').insertRow();
-    var cell1 = row.insertCell();
-    cell1.colSpan = 4;
-    var matchDiv = document.createElement('div');
-    matchDiv.className = 'bracket-match';
-    matchDiv.innerHTML = '<div class="bm-teams">'
-      + '<div class="bm-team"><span class="bm-circle" style="background:#'+teamColor(m.home).substring(1)+'">'+teamInitials(m.home)+'</span><span class="bm-name">'+m.home+'</span><span class="bm-score">?</span></div>'
-      + '<div class="bm-team"><span class="bm-circle" style="background:#'+teamColor(m.away).substring(1)+'">'+teamInitials(m.away)+'</span><span class="bm-name">'+m.away+'</span><span class="bm-score">?</span></div>'
-      + '</div><div class="bm-tbd">TBD</div>';
-    cell1.appendChild(matchDiv);
-  });
-})();
-
-
 /* ================================================================
    COUNTDOWN TO FINAL
    ================================================================ */
@@ -2174,7 +1931,7 @@ function renderKnockoutMatch(m, headerClass, headerText) {
   var el = document.getElementById('countdown');
   if (!el) return;
 
-  var finalDate = new Date('2026-07-19T22:00:00-04:00');
+  var finalDate = new Date('2026-07-19T18:00:00-04:00');
   var now = new Date();
   var diff = finalDate - now;
 
