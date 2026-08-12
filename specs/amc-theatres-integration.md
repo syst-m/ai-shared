@@ -82,7 +82,7 @@ The AMC API base URL for production is `https://api.amctheatres.com`. All endpoi
 ### Security
 
 - All user-supplied parameters (theater IDs, movie IDs, seat IDs, dates) MUST be validated against expected types and ranges before being forwarded to the AMC API.
-- Theater IDs MUST be positive integers; movie IDs MUST be positive integers; seat IDs MUST match the pattern `^[A-Z]+[0-9]+$`.
+- Theater IDs MUST be positive integers; movie IDs MUST be positive integers; seat IDs MUST match the pattern `^[A-Z][0-9]+$` (single letter + number, e.g., "J12").
 - The integration MUST sanitize natural-language input to prevent parameter injection (e.g., a user saying "book seat J12; DROP TABLE seats" MUST NOT result in the injection reaching any downstream system).
 - When operating as an AI agent, the integration MUST require explicit user confirmation before executing any write operation (order creation, seat selection, fulfillment).
 - API keys and auth tokens MUST be stored in a secrets manager or encrypted at rest; they MUST NEVER appear in logs, error messages, environment variable dumps, or version control.
@@ -132,6 +132,17 @@ X-AMC-Auth-Token: {auth-token}
 
 ---
 
+### 4.0 HAL Envelope Structure
+
+All AMC API responses use a HAL (Hypertext Application Language) envelope. A typical response wraps the resource in `_embedded` and provides navigation via `_links`:
+
+```json
+{
+  "_embedded": { "movies": [ /* array of movie objects */ ] },
+  "_links": { "self": { "href": "/v2/movies?page-number=1" } }
+}
+```
+
 ## 4. Core API Endpoints
 
 ### 4.1 Movie Search & Details
@@ -172,7 +183,9 @@ X-AMC-Auth-Token: {auth-token}
     "posterImage": "https://...",
     "heroImage": "https://..."
   },
-  "_links": { ... }
+  "_links": {
+    "self": { "href": "/v2/movies/{movie-id}" }
+  }
 }
 ```
 
@@ -314,21 +327,78 @@ X-AMC-Auth-Token: {auth-token}
     }
   ],
   "seatStatuses": {
-    "Available": 0,
-    "Reserved": 1,
-    "Unavailable": 2,
-    "Selected": 3
+    "Available": "Available",
+    "Reserved": "Reserved",
+    "Unavailable": "Unavailable",
+    "Selected": "Selected"
   }
 }
 ```
 
 **Seat Status Values:**
+> **Note:** The API returns seat `status` as a **string** (e.g., `"Available"`). The numeric codes below are for internal mapping only and must not be sent to the API.
 | Value | Label | Description |
 |---|---|---|
 | `0` | Available | Seat can be booked |
 | `1` | Reserved | Currently held by another transaction |
 | `2` | Unavailable | Not a valid seat (aisle, wall, blocked) |
 | `3` | Selected | Marked for booking in current session |
+
+### 4.4.1 Order Update
+
+**Base Path:** `/v3/orders/{orderToken}`
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `PUT` | `/v3/orders/{orderToken}` | Update an existing order |
+
+**Update Request:**
+
+```json
+{
+  "items": [
+    {
+      "itemType": "TICKET",
+      "sku": "ADV-ADMIT",
+      "performanceNumber": 556789,
+      "quantity": 3,
+      "seats": ["J12", "J13", "J14"]
+    }
+  ]
+}
+```
+
+Only the `items` array can be updated. Seat changes trigger a re-validation of availability. Quantity changes are subject to the same ~10-minute expiration window.
+
+### 4.4.2 Embargoed Showtimes
+
+**Endpoint:** `/v2/theatres/{theatre-number}/showtimes/{date}/views/embargoed`
+
+Returns showtimes for movies not yet publicly announced (e.g., advance industry screenings). Requires the same `X-AMC-Vendor-Key` header as other showtime endpoints. The response schema is identical to the standard showtime endpoint (Section 4.3). This endpoint is primarily useful for internal monitoring and pre-release planning; the AI assistant layer SHOULD ignore embargoed showtimes unless explicitly requested by the user with a valid reason.
+
+### 4.4.3 Order Creation to Fulfillment Flow
+
+The complete order lifecycle consists of the following steps:
+
+1. **Seat selection** — User selects or accepts recommended seats via the Seat Selection Engine (§8).
+2. **Order creation** — POST to `/v3/orders` with selected seats. The API returns an order with status `Created` and a token.
+3. **Seat re-check** — Before fulfillment, re-query the seating layout to confirm all seats are still `Available`. If any seat is no longer available, re-run the seat selection engine or abort (§4.4, "Seat conflict handling").
+4. **Order fulfillment** — POST to `/v3/orders/{orderToken}/fulfill` to submit for payment and barcode generation.
+5. **Confirmation** — Poll GET `/v3/orders/{orderToken}` until status is `Confirmed`, or wait for the fulfillment response.
+
+Orders have a ~10 minute window between creation and fulfillment. The integration layer MUST monitor order expiration and alert the user before timeout. If an order expires, the system MUST create a new order rather than retrying on the expired token.
+
+**Seat conflict handling:** Before submitting an order for fulfillment, the integration MUST re-check seat availability via the Seating API. If any selected seat is no longer `Available`, the system MUST either (a) re-run the seat selection engine for remaining available seats, or (b) abort and inform the user. This prevents silent failures where seats were booked by another party between selection and fulfillment.
+
+### 4.4.4 Order Status Values
+
+| Status | Description |
+|--------|-------------|
+| `Created` | Order created but not yet submitted for payment |
+| `Submitted` | Order submitted for payment processing |
+| `Confirmed` | Payment successful; tickets/barcode generated |
+| `Expired` | Order expired before fulfillment (10-minute window elapsed) |
+| `Canceled` | Order canceled by user or system |
 
 #### Order API v3
 
@@ -411,7 +481,7 @@ interface Theatre {
   id: number;
   name: string;
   slug: string;
-  address: string;
+  address: TheatreAddress;
   city: string;
   state: string;
   zip: string;
@@ -419,6 +489,13 @@ interface Theatre {
   lon: number;
   phone?: string;
   formats: string[];     // available format codes
+}
+
+interface TheatreAddress {
+  streetAddress: string;
+  city: string;
+  state: string;
+  zip: string;
 }
 
 interface Showtime {
@@ -437,7 +514,7 @@ interface Showtime {
   isAlmostSoldOut: boolean;
   isCanceled: boolean;
   formats: string[];
-  prices: TicketPrice[];
+  ticketPrices: TicketPrice[];
 }
 
 interface Seat {
@@ -464,7 +541,7 @@ interface TicketPrice {
   sku: string;
   amount: number;
   tax: number;
-  formattedAmount: string;
+  formattedPrice: string;
 }
 ```
 
@@ -474,7 +551,7 @@ All AMC API error responses follow the HAL-style `ApiError` schema:
 
 ```json
 {
-  "statusCode": 429,
+  "statusCode": 429,    // HTTP status code
   "message": "Rate limit exceeded",
   "errorCode": "RATE_LIMIT_EXCEEDED",
   "moreInfo": "Please reduce request frequency."
@@ -498,6 +575,7 @@ All AMC API error responses follow the HAL-style `ApiError` schema:
 | `500–599` | Server Error | Apply exponential backoff + jitter retry up to 3 attempts |
 
 ### 6.2 Retry Policy
+> **Note:** The `Retry-After` header, if present in a 429 response, MUST take precedence over the calculated backoff delay.
 
 The integration MUST implement the following retry strategy:
 
@@ -550,6 +628,21 @@ The integration SHOULD implement a client-side token bucket:
 | Per-request cost | 1 token | Yes |
 | Behavior on empty | Queue and wait for refill | — |
 
+> **Note:** The maximum queue wait time is 30 seconds. If the bucket does not have enough tokens within 30 seconds, the request is rejected with a `429` response to the user.
+
+### 7.1.1 Rate Limit Credit Costs
+
+AMC's credit-based rate limiting assigns different costs per endpoint:
+
+| Endpoint Category | Credit Cost |
+|-------------------|-------------|
+| Movie, Theatre, Location (v2) | 1 credit |
+| Showtimes (v2) | 1 credit |
+| Seating (v3) | 2 credits |
+| Order (v3) | 2 credits |
+
+These are typical values; the actual costs are determined by the vendor agreement. The integration SHOULD log the `X-RateLimit-Remaining` header (if provided) to detect deviations from expected costs.
+
 ### 7.3 Adaptive Throttling
 
 - The integration MUST monitor `429` responses and dynamically reduce the effective rate.
@@ -583,6 +676,7 @@ The integration MUST implement a scoring algorithm for ranking available seats. 
 | **User preference** | 10% | Respects saved user preferences (aisle, window, back row, front row). |
 
 ### 8.2 Scoring Formula
+> **Note:** The overall score is called the **composite score** throughout this section. The variable name `seat_score` in the formula represents the composite score for a single seat.
 
 ```
 seat_score = (center_score × 0.35)
@@ -596,11 +690,15 @@ Where each sub-score is normalized to 0–100.
 
 ### 8.3 Center Score Calculation
 
+> **Note:** `center_col` is the middle column index (e.g., for 20 columns, `center_col = 10`). `max_col` is the total number of columns in the auditorium.
+
 ```
 center_score = 100 × (1 - |seat_col - center_col| / max_col)
 ```
 
 ### 8.4 Depth Score Calculation
+
+> **Note:** `total_rows` is the count of rows in the auditorium, derived from the number of entries in the `rows` array of the seating layout response. Row IDs are strings (e.g., "A", "B", "J") and must be mapped to sequential indices starting from 1 for the formula.
 
 ```
 ideal_row_start = total_rows × 0.40
@@ -615,8 +713,10 @@ else:
 
 ### 8.5 Adjacency Bonus
 
+> **Note:** All adjacency bonuses are applied **once per booking** (not per seat or per pair). For example, if booking 4 consecutive seats, the +25 bonus applies once, not twice.
+
 - When `ticket_count == 2`: +20 if seats are side-by-side in the same row, +5 if diagonal.
-- When `ticket_count >= 3`: +25 if all consecutive in one row, +10 if split across 2 rows with majority together.
+- When `ticket_count >= 3`: +25 if all consecutive in one row, +10 if split across 2 rows with majority together (more than 50% of tickets in one row).
 - Non-adjacent selections: −15 penalty.
 
 ### 8.6 User Preference Overrides
@@ -631,12 +731,24 @@ The integration MUST support these preference flags:
 | `front_row` | Shift depth ideal zone toward the front (10–40% of rows) |
 | `no_preference` | Use default scoring |
 
+> **Note:** The `aisle` preference identifies aisle columns by checking if adjacent seat positions have status `Unavailable` (code 2) in the seating layout. The `window` preference is theater-specific: it prefers seats in the outermost columns (closest to the side aisles), not "window" in the airplane sense.
+
 ### 8.7 Output
 
-The seat selection engine MUST return the top 3 seat combinations ranked by score, each with:
+The seat selection engine MUST return the top 3 seat **combinations** ranked by composite score. A "combination" is a set of seats for the requested ticket count. Each combination MUST include:
 - Seat labels (e.g., `[J12, J13]`)
 - Composite score
 - Human-readable rationale (e.g., "Center of auditorium, ideal row depth")
+
+### 8.7.1 Tie-Breaking Policy
+
+When two or more seat combinations have identical composite scores, the following tie-breaking rules apply in order:
+
+1. **Row proximity:** Prefer combinations in rows closer to the screen (lower row letter/number).
+2. **Center alignment:** Among tied rows, prefer combinations closer to the horizontal center.
+3. **Seat ID ordering:** If still tied, prefer the combination whose lowest seat ID sorts first lexicographically.
+
+This policy ensures deterministic output for the same input.
 
 ---
 
@@ -644,12 +756,12 @@ The seat selection engine MUST return the top 3 seat combinations ranked by scor
 
 ### 9.1 Unit Tests
 
-- **Data model deserialization:** Verify all Pydantic models correctly parse AMC HAL-style JSON responses, including nested `_embedded` collections.
+- **Data model deserialization:** Verify all data model deserialization (TypeScript interfaces per §5.1) correctly parse AMC HAL-style JSON responses, including nested `_embedded` collections.
 - **Seat selection edge cases:**
   - Single-seat auditoriums (score = 100 by definition).
   - Fully booked rows (engine returns empty set or falls back to next available row).
   - Auditoriums with irregular layouts (stadium vs. flat, angled rows).
-  - Tie-breaking: when multiple seat combinations have identical scores, prefer lower row letters (closer to screen) or document the tie-breaker policy.
+  - Tie-breaking policy is defined in §8.7.1.
 - **Format filtering:** Verify `include-attributes` and `exclude-attributes` logic with `and`/`or` operators.
 - **Retry logic:** Verify exponential backoff + jitter produces correct delay sequences; verify non-retryable statuses fail immediately.
 
@@ -730,6 +842,9 @@ The integration MUST emit the following metrics:
 
 ### Phase 5 — Polish & Operations (Week 9–10)
 
+> **Note:** The AMC sandbox environment status should be confirmed during Phase 1. If no sandbox is available, integration testing will rely on staging credentials and manual verification.
+
+- [ ] Confirm AMC sandbox/staging availability and obtain test credentials
 - [ ] Implement circuit breaker and adaptive throttling
 - [ ] Add observability: request logging, error metrics, latency tracking
 - [ ] Write integration tests against AMC sandbox (if available)
@@ -776,8 +891,8 @@ The integration MUST emit the following metrics:
 | **Performance Number** | AMC's internal identifier for a specific showing of a movie at a theater; required for seating and order APIs |
 | **Layout ID** | Identifier for the physical seat arrangement of an auditorium; paired with performance number to query availability |
 | **HAL Envelope** | Hypertext Application Language response format used by AMC; collections include `_embedded` data and `_links` navigation |
-| **Embargoed** | Showtimes for movies not yet publicly announced (e.g., advance industry screenings) |
-| **WAMC** | "When At My Cinema" — AMC's internal session identifier for a showtime |
+| **Embargoed** | Showtimes for movies not yet publicly announced (e.g., advance industry screenings); see §4.4.2 |
+| **WAMC** | "When At My Cinema" — AMC's internal session identifier for a showtime (not exposed by the public API; retained for reference only) |
 
 ---
 
