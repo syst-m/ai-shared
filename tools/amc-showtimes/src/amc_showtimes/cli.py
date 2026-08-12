@@ -76,10 +76,6 @@ def cmd_theaters(ctx: click.Context, search: str | None) -> None:
             _print_theater(t)
     else:
         click.echo("Known theaters:")
-        for alias, number in KNOWN_THEATERS.items():
-            if number not in {v for v in KNOWN_THEATERS.values()[:KNOWN_THEATERS.values().index(number)]}:
-                pass  # all unique numbers
-
         seen: set[int] = set()
         for alias, number in sorted(KNOWN_THEATERS.items(), key=lambda x: x[1]):
             if number not in seen:
