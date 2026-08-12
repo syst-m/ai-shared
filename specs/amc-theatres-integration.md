@@ -21,7 +21,8 @@
 6. [Error Handling & Retry Strategy](#6-error-handling--retry-strategy)
 7. [Rate Limiting Compliance](#7-rate-limiting-compliance)
 8. [Seat Selection Strategy](#8-seat-selection-strategy)
-9. [Implementation Plan](#9-implementation-plan)
+9. [Testing Strategy](#9-testing-strategy)
+10. [Implementation Plan](#10-implementation-plan)
 
 ---
 
@@ -77,6 +78,15 @@ The AMC API base URL for production is `https://api.amctheatres.com`. All endpoi
 - All external API calls SHOULD pass through the rate limiter before dispatch.
 - Movie and theater catalogs MAY be cached; showtimes and seating availability MUST NOT be cached beyond 60 seconds.
 - PII (AMC account data, payment info) MUST never be logged or stored in plaintext.
+
+### Security
+
+- All user-supplied parameters (theater IDs, movie IDs, seat IDs, dates) MUST be validated against expected types and ranges before being forwarded to the AMC API.
+- Theater IDs MUST be positive integers; movie IDs MUST be positive integers; seat IDs MUST match the pattern `^[A-Z]+[0-9]+$`.
+- The integration MUST sanitize natural-language input to prevent parameter injection (e.g., a user saying "book seat J12; DROP TABLE seats" MUST NOT result in the injection reaching any downstream system).
+- When operating as an AI agent, the integration MUST require explicit user confirmation before executing any write operation (order creation, seat selection, fulfillment).
+- API keys and auth tokens MUST be stored in a secrets manager or encrypted at rest; they MUST NEVER appear in logs, error messages, environment variable dumps, or version control.
+- The integration SHOULD implement request signing or CSRF-like tokens if exposed via a web interface, to prevent request forgery.
 
 ---
 
@@ -375,6 +385,7 @@ X-AMC-Auth-Token: {auth-token}
 - Orders have a ~10 minute window between creation and fulfillment.
 - The integration layer MUST monitor order expiration and alert the user before timeout.
 - If an order expires, the system MUST create a new order rather than retrying on the expired token.
+- **Seat conflict handling:** Before submitting an order for fulfillment, the integration MUST re-check seat availability via the Seating API. If any selected seat is no longer `Available`, the system MUST either (a) re-run the seat selection engine for remaining available seats, or (b) abort and inform the user. This prevents silent failures where seats were booked by another party between selection and fulfillment.
 
 ---
 
@@ -602,13 +613,13 @@ else:
     depth_score = max(0, 100 - (distance_from_zone / total_rows) × 200)
 ```
 
-### 8.4 Adjacency Bonus
+### 8.5 Adjacency Bonus
 
 - When `ticket_count == 2`: +20 if seats are side-by-side in the same row, +5 if diagonal.
 - When `ticket_count >= 3`: +25 if all consecutive in one row, +10 if split across 2 rows with majority together.
 - Non-adjacent selections: −15 penalty.
 
-### 8.5 User Preference Overrides
+### 8.6 User Preference Overrides
 
 The integration MUST support these preference flags:
 
@@ -620,7 +631,7 @@ The integration MUST support these preference flags:
 | `front_row` | Shift depth ideal zone toward the front (10–40% of rows) |
 | `no_preference` | Use default scoring |
 
-### 8.6 Output
+### 8.7 Output
 
 The seat selection engine MUST return the top 3 seat combinations ranked by score, each with:
 - Seat labels (e.g., `[J12, J13]`)
@@ -629,9 +640,53 @@ The seat selection engine MUST return the top 3 seat combinations ranked by scor
 
 ---
 
-## 9. Implementation Plan
+## 9. Testing Strategy
+
+### 9.1 Unit Tests
+
+- **Data model deserialization:** Verify all Pydantic models correctly parse AMC HAL-style JSON responses, including nested `_embedded` collections.
+- **Seat selection edge cases:**
+  - Single-seat auditoriums (score = 100 by definition).
+  - Fully booked rows (engine returns empty set or falls back to next available row).
+  - Auditoriums with irregular layouts (stadium vs. flat, angled rows).
+  - Tie-breaking: when multiple seat combinations have identical scores, prefer lower row letters (closer to screen) or document the tie-breaker policy.
+- **Format filtering:** Verify `include-attributes` and `exclude-attributes` logic with `and`/`or` operators.
+- **Retry logic:** Verify exponential backoff + jitter produces correct delay sequences; verify non-retryable statuses fail immediately.
+
+### 9.2 Contract Tests
+
+- The integration SHOULD include contract tests against the AMC API schema using a tool such as **Schemathesis** or **Pact**.
+- Contract tests MUST verify that required response fields (e.g., `performanceNumber`, `layoutId`, `showDateTimeUtc`) are always present and correctly typed.
+- Contract tests SHOULD run on each CI pipeline to detect breaking changes in the AMC API before they reach production.
+
+### 9.3 Integration Tests
+
+- Integration tests against the AMC sandbox (if available) MUST cover the full happy path: movie lookup → theater search → showtime query → seat selection → order creation → fulfillment.
+- Integration tests SHOULD include failure scenarios: expired orders, sold-out seats, rate-limited responses, and network timeouts.
+
+### 9.4 Observability
+
+The integration MUST emit the following metrics:
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `amc_api_requests_total` | Counter | Total API requests by endpoint and status code |
+| `amc_api_request_duration_seconds` | Histogram | Latency distribution by endpoint |
+| `amc_api_rate_limit_hits_total` | Counter | Number of 429 responses by endpoint (for tuning token bucket) |
+| `amc_seat_selection_duration_seconds` | Histogram | Time to score all seats in an auditorium |
+| `amc_order_timeout_rate` | Gauge | Fraction of orders that expired before fulfillment |
+| `amc_circuit_breaker_state` | Gauge | Current state (closed/open/half-open) per endpoint |
+
+- The integration SHOULD log structured JSON logs including request ID, endpoint, status code, and latency.
+- Seat selection latency SHOULD be tracked per auditorium size to detect performance regressions.
+
+---
+
+## 10. Implementation Plan
 
 ### Phase 1 — Foundation (Week 1–2)
+
+> **Note:** Phases 1–2 (read-only features) deliver standalone value and MAY be merged/released independently of the e-commerce-dependent Phases 3–5. This allows the team to ship movie discovery and showtime lookup while awaiting `X-AMC-Auth-Token` approval.
 
 - [ ] Register for AMC Developer Portal access
 - [ ] Obtain `X-AMC-Vendor-Key`
@@ -688,10 +743,16 @@ The seat selection engine MUST return the top 3 seat combinations ranked by scor
 
 ## Appendix A: Known Attribute Codes
 
+> **Note:** This list is based on observed AMC API responses and public documentation as of 2026-08. It is NOT exhaustive — AMC may add, remove, or modify attribute codes without notice. The integration SHOULD handle unknown attribute codes gracefully (log a warning, pass through unchanged).
+
 | Code | Name | Applies To |
 |------|------|------------|
 | `IMAX` | IMAX | Movie, Showtime |
+| `IMAX_LASER` | IMAX with Laser | Movie, Showtime |
 | `DOLBY_CINEMA` | Dolby Cinema | Movie, Showtime |
+| `PRIME` | PRIME Cinema | Movie, Showtime |
+| `4DX` | 4DX | Movie, Showtime |
+| `SCREENX` | ScreenX | Movie, Showtime |
 | `LASED` | Digital (Laser) | Showtime |
 | `3D` | 3D | Movie, Showtime |
 | `ADULTS_ONLY` | Rated R / NC-17 | Movie |
