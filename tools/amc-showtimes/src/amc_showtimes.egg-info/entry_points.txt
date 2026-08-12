@@ -1,0 +1,2 @@
+[console_scripts]
+amc-showtimes = amc_showtimes.cli:cli

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import json
 import logging
+import random
 import time
 from pathlib import Path
 from typing import Any
@@ -268,7 +268,6 @@ def _backoff(attempt: int, base: float = 0.5) -> float:
 
 def _jitter(value: float, factor: float = 0.1) -> float:
     """Add random jitter to a delay value."""
-    import random
     return abs(random.gauss(0, value * factor))
 
 

@@ -10,11 +10,13 @@ from typing import Any
 import click
 
 from .client import AMCClient, AMCClientError
+from .enrich import OMDB_KEY_PATH
 from .formats import (
     FORMATS,
     FORMAT_BY_CODE,
     list_premium_codes,
     resolve_format,
+    resolve_formats,
 )
 from .movies import get_movie, search_movies
 from .showtimes import filter_after_time, filter_by_formats, get_showtimes
@@ -153,6 +155,14 @@ def cmd_showtimes(
     # Apply format filter
     if formats:
         fmt_list = [f.strip() for f in formats.split(",")]
+        resolved = resolve_formats(fmt_list)
+        if not resolved:
+            click.echo(
+                f"Unrecognized format(s): {formats}. "
+                f"Use 'amc-showtimes formats' to see valid codes.",
+                err=True,
+            )
+            sys.exit(1)
         showtimes = filter_by_formats(showtimes, fmt_list)
         if not showtimes:
             click.echo(
@@ -271,6 +281,14 @@ def cmd_query(
     # Apply filters
     if formats:
         fmt_list = [f.strip() for f in formats.split(",")]
+        resolved = resolve_formats(fmt_list)
+        if not resolved:
+            click.echo(
+                f"Unrecognized format(s): {formats}. "
+                f"Use 'amc-showtimes formats' to see valid codes.",
+                err=True,
+            )
+            sys.exit(1)
         showtimes = filter_by_formats(showtimes, fmt_list)
 
     if after:
@@ -278,9 +296,14 @@ def cmd_query(
             parts = after.split(":")
             hour = int(parts[0])
             minute = int(parts[1]) if len(parts) > 1 else 0
+            if not (0 <= hour <= 23 and 0 <= minute <= 59):
+                raise ValueError("out of range")
             showtimes = filter_after_time(showtimes, hour, minute)
         except (ValueError, IndexError):
-            click.echo(f"Invalid time format: {after} (use HH:MM)", err=True)
+            click.echo(
+                f"Invalid time format: {after} (use HH:MM, 00:00–23:59)",
+                err=True,
+            )
             sys.exit(1)
 
     if not showtimes:
@@ -460,5 +483,4 @@ def _print_theater(theater) -> None:
     click.echo(f"    {loc.street}, {loc.city}, {loc.stateCode} {loc.zip}")
 
 
-# Import for enrich command
-from .enrich import OMDB_KEY_PATH
+

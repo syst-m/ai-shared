@@ -34,8 +34,23 @@ def lookup_theater_number(name: str) -> int | None:
     """
     # Fast path: check known aliases (case-insensitive)
     lower = name.strip().lower()
+
+    # Direct match first (case-insensitive)
+    if lower in KNOWN_THEATERS:
+        return KNOWN_THEATERS[lower]
+
+    # Normalized match: strip hyphens and spaces from input and compare
+    # against each alias with hyphens stripped (case-insensitive). We use
+    # exact match (not substring) to avoid false positives. The original
+    # code used `alias.replace("-", "") in lower.replace("-", "")` which
+    # caused "amc-metron" to match "amc-metreon" because "amcmetron" is a
+    # substring of "amcmetreon". With exact match, only truly matching
+    # strings match. Since all aliases for the same theater normalize to
+    # the same string and map to the same number, there are no ambiguous
+    # false positives.
+    input_normalized = lower.replace("-", "").replace(" ", "")
     for alias, number in KNOWN_THEATERS.items():
-        if alias == lower or alias.replace("-", "") in lower.replace("-", ""):
+        if input_normalized == alias.replace("-", ""):
             return number
 
     return None
