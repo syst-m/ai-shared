@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # OMDb API — free tier, needs API key.
 # Sign up at http://www.omdbapi.com/apikey.aspx
-OMDB_BASE = "http://www.omdbapi.com"
+OMDB_BASE = "https://www.omdbapi.com"
 OMDB_KEY_PATH = Path.home() / ".openclaw" / ".omdb-api-key"
 
 # Cache directory for enrichment results (TTL 24h)
@@ -149,7 +149,7 @@ def _to_integer_percent(value: float | None) -> int | None:
 # ------------------------------------------------------------------ #
 
 
-def _cache_key(title: str, year: int | None) -> str:
+def _cache_key(title: str, year: int | None = None) -> str:
     """Generate a cache file path for a movie."""
     safe = "".join(c if c.isalnum() else "_" for c in title.lower())[:60]
     year_part = f"_{year}" if year else ""
