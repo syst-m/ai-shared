@@ -1,0 +1,2801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python by Example — 0 to 100</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --sidebar-bg: #f6f8fa;
+  --border: #e2e6ea;
+  --text: #1f2428;
+  --muted: #5c6773;
+  --accent: #306998;
+  --accent-light: #eaf2f8;
+  --yellow: #ffd43b;
+  --code-bg: #f7f9fb;
+  --code-border: #e2e6ea;
+  --out-bg: #f2f4f6;
+  --ok: #1a7f37;
+  --err: #cf222e;
+  --radius: 8px;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1215;
+    --sidebar-bg: #151a1f;
+    --border: #2a3138;
+    --text: #d8dee4;
+    --muted: #8b98a5;
+    --accent: #6aa8d8;
+    --accent-light: #17242f;
+    --code-bg: #161b21;
+    --code-border: #2a3138;
+    --out-bg: #12161a;
+    --err: #f47174;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+body {
+  margin: 0;
+  font-family: var(--sans);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
+}
+
+/* ---------- layout ---------- */
+#sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: 272px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 20px 0 40px;
+  z-index: 10;
+}
+#main {
+  margin-left: 272px;
+  padding: 0 48px 120px;
+  max-width: 980px;
+}
+.brand {
+  padding: 0 20px 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.brand h1 {
+  margin: 0; font-size: 19px; letter-spacing: .2px;
+}
+.brand h1 .py { color: var(--accent); }
+.brand .tag { color: var(--muted); font-size: 12px; margin-top: 3px; }
+#search {
+  width: calc(100% - 40px); margin: 0 20px 10px;
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+}
+.nav-group { margin-bottom: 4px; }
+.nav-group h3 {
+  margin: 14px 20px 4px; font-size: 11px;
+  text-transform: uppercase; letter-spacing: .8px;
+  color: var(--muted);
+}
+.nav-group a {
+  display: block;
+  padding: 4px 20px 4px 24px;
+  font-size: 13.5px;
+  color: var(--text);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  opacity: .82;
+}
+.nav-group a:hover { background: var(--accent-light); opacity: 1; }
+.nav-group a.active {
+  border-left-color: var(--yellow);
+  background: var(--accent-light);
+  opacity: 1; font-weight: 600;
+}
+
+/* ---------- topbar ---------- */
+#topbar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0 14px;
+  margin-bottom: 18px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+#topbar .title { font-size: 15px; font-weight: 650; }
+#topbar .spacer { flex: 1; }
+#py-status {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12.5px; color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  background: var(--code-bg);
+}
+#py-status .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #9aa4af;
+}
+#py-status.loading .dot { background: var(--yellow); animation: pulse 1s infinite; }
+#py-status.ready .dot { background: var(--ok); }
+#py-status.error .dot { background: var(--err); }
+@keyframes pulse { 50% { opacity: .35; } }
+
+/* ---------- content typography ---------- */
+.content { font-size: 15.5px; }
+.content h1 {
+  font-size: 30px; margin: 64px 0 6px;
+  padding-top: 18px;
+  border-top: 2px solid var(--yellow);
+}
+.content h1:first-child { margin-top: 8px; border-top: none; padding-top: 0; }
+.content h1 .sec-num { color: var(--muted); font-size: 20px; margin-right: 10px; }
+.content h2 {
+  font-size: 21px; margin: 40px 0 10px;
+  padding: 0; position: relative;
+}
+.content h2 .anchor {
+  position: absolute; left: -20px;
+  color: var(--accent); text-decoration: none;
+  opacity: 0; font-weight: 400;
+}
+.content h2:hover .anchor { opacity: .7; }
+.content p { margin: 12px 0; }
+.content ul, .content ol { padding-left: 26px; margin: 12px 0; }
+.content li { margin: 4px 0; }
+.content strong { font-weight: 650; }
+.content a { color: var(--accent); }
+.content code:not(.hljs) {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+.content blockquote {
+  margin: 14px 0; padding: 10px 16px;
+  border-left: 3px solid var(--yellow);
+  background: var(--accent-light);
+  border-radius: 0 6px 6px 0;
+  color: var(--text);
+}
+.content blockquote p { margin: 4px 0; }
+.content blockquote .bq-label {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .7px;
+  color: var(--accent);
+  display: block; margin-bottom: 3px;
+}
+.badge {
+  display: inline-block;
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .6px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  vertical-align: 2px;
+  margin-left: 8px;
+}
+.badge.new { background: var(--yellow); color: #3d3305; }
+.badge.ref { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent); }
+hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+table { border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 6px 12px; text-align: left; }
+th { background: var(--code-bg); }
+
+/* ---------- code blocks ---------- */
+.codeblock {
+  border: 1px solid var(--code-border);
+  border-radius: var(--radius);
+  margin: 16px 0;
+  overflow: hidden;
+  background: var(--code-bg);
+}
+.cb-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px;
+  font-size: 12px; font-weight: 600;
+  color: var(--muted);
+  border-bottom: 1px solid var(--code-border);
+  font-family: var(--mono);
+}
+.cb-bar .dot-row { display: inline-flex; gap: 5px; margin-right: 4px; }
+.cb-bar .dot-row i {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--border); display: inline-block;
+}
+.codeblock pre {
+  margin: 0; padding: 14px 16px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.codeblock.output pre { color: var(--text); }
+.codeblock.output .cb-bar { background: var(--out-bg); }
+
+/* ---------- playground ---------- */
+.pg {
+  border: 1px solid var(--code-border);
+  border-radius: var(--radius);
+  margin: 16px 0;
+  overflow: hidden;
+  background: var(--code-bg);
+}
+.pg-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px 7px 14px;
+  border-bottom: 1px solid var(--code-border);
+}
+.pg-bar .pg-title {
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  color: var(--muted);
+}
+.pg-bar .pg-status {
+  font-size: 12px; color: var(--muted);
+  flex: 1; text-align: right;
+  font-family: var(--mono);
+}
+.pg-bar button {
+  font-family: var(--sans);
+  font-size: 12.5px; font-weight: 600;
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+.pg-bar button:hover { border-color: var(--accent); color: var(--accent); }
+.pg-bar button.run {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.pg-bar button.run:hover { filter: brightness(1.1); color: #fff; }
+.pg-bar button.run:disabled { opacity: .6; cursor: wait; filter: none; }
+.pg textarea {
+  display: block;
+  width: 100%;
+  border: none; outline: none; resize: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13.5px;
+  line-height: 1.55;
+  padding: 14px 16px;
+  white-space: pre;
+  overflow-x: auto;
+  tab-size: 4;
+}
+.pg .pg-out {
+  margin: 0;
+  padding: 12px 16px;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+  border-top: 1px dashed var(--code-border);
+  background: var(--out-bg);
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 40px;
+}
+.pg .pg-out.empty { color: var(--muted); font-style: italic; font-family: var(--sans); font-size: 13px; }
+.pg .pg-out.err { color: var(--err); }
+.pg .pg-out .okmark { color: var(--ok); }
+kbd {
+  font-family: var(--mono); font-size: 11.5px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+footer.colophon {
+  margin-top: 80px; padding-top: 20px;
+  border-top: 1px solid var(--border);
+  color: var(--muted); font-size: 13px;
+}
+@media (max-width: 880px) {
+  #sidebar { display: none; }
+  #main { margin-left: 0; padding: 0 20px 80px; }
+}
+</style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <div class="brand">
+    <h1><span class="py">🐍</span> Python <span style="color:var(--muted);font-weight:400">by Example</span></h1>
+    <div class="tag">0 → 100 · backend-focused · live in your browser</div>
+  </div>
+  <input id="search" type="search" placeholder="Filter topics…" autocomplete="off">
+  <nav id="toc"></nav>
+</aside>
+
+<div id="main">
+  <div id="topbar">
+    <span class="title">Python by Example</span>
+    <span class="spacer"></span>
+    <span id="py-status"><span class="dot"></span><span id="py-status-text">Python 3.14 — loads on first Run</span></span>
+  </div>
+  <article class="content" id="content"></article>
+  <footer class="colophon">
+    <p>Every runnable example executes <strong>CPython 3.14.2</strong> compiled to WebAssembly
+    (<a href="https://pyodide.org" target="_blank" rel="noopener">Pyodide</a>) — the same
+    interpreter you'd install, running entirely in your browser. Nothing is sent to a server;
+    the one-time ~10&nbsp;MB runtime download comes from the jsDelivr CDN.</p>
+    <p>Content targets modern Python (3.12+ baseline). Features newer than that are flagged
+    with a <span class="badge new">new</span> badge. Blocks marked
+    <span class="badge ref">reference</span> show real-world code that needs packages or
+    network access and can't run in the browser sandbox — read them, copy them, run them locally.</p>
+    <p><kbd>⌘/Ctrl + Enter</kbd> runs the example under your cursor · <kbd>Tab</kbd> indents ·
+    All examples share one persistent interpreter (notebook-style) — reload the page to reset it.</p>
+  </footer>
+</div>
+
+<!-- ============================================================ -->
+<!-- TUTORIAL CONTENT (markdown).                                  -->
+<!-- Fences: ```python = runnable · ```python no-run = reference   -->
+<!--         ```bash | ```text | ```json = static display          -->
+<!-- ============================================================ -->
+<script type="text/markdown" id="source">
+# Before you start
+
+**What this is.** A zero-to-100 Python refresher for people who already know how to program.
+Each topic is short: the concept, one or two *working* examples, and the practices that
+separate junior from senior Python. Every `python` block has a **▶ Run** button — the code is
+editable, and it executes real CPython in your browser.
+
+**How the playground works.**
+
+- ▶ **Run** executes the block in an in-browser Python 3.14. Output appears below the code.
+- Code is **editable** — change it, rerun it, break it. That's the point.
+- Examples **share one persistent interpreter**, like a Jupyter kernel: a variable you define
+  in one example is still there in the next. Reload the page to wipe it clean.
+- Edited code is saved in your browser's local storage, so your experiments survive a refresh.
+  ↺ **Reset** restores the original code.
+- Blocks marked <span class="badge ref">reference</span> (FastAPI, httpx, pip, pytest…) can't
+  run in the browser sandbox — study them and run them on your machine.
+
+**The week ahead.** This tour is weighted for **backend / API work**: dataclasses, type hints,
+async/await, httpx, FastAPI + Pydantic, config, logging, testing. Language fundamentals are
+front-loaded so everything else reads fast.
+
+**The golden rules of Python, in one breath:** explicit over implicit, list
+comprehensions over `append` loops, `pathlib` over `os.path`, `dataclasses` over hand-rolled
+`__init__`, f-strings over `.format`, virtualenvs always, `ruff` + `mypy` on everything,
+and *don't fight the language* — Python has exactly one obvious way to do most things.
+
+---
+
+# Language basics
+
+## Numbers
+
+Python has `int` (arbitrary precision — no overflow, ever), `float` (IEEE 754 double),
+`complex`, and `bool` (a subclass of `int`). Division `/` always returns a float; use `//`
+for floor division.
+
+```python
+x, y = 10, 2.5
+print(type(x), type(y))
+print(7 / 2, 7 // 2, 7 % 2, 2 ** 10)   # /, //, %, **
+print(1_000_000, 0xFF, 0b1010, 0o17)    # separators + number bases
+print(divmod(17, 5))                    # (quotient, remainder)
+print(2 ** 200)                         # arbitrary precision int
+```
+
+```text
+<class 'int'> <class 'float'>
+3.5 3 1 1024
+1000000 255 10 15
+(3, 2)
+1606938044258990275541962092341162602522202993782792835301376
+```
+
+The one float trap that bites everyone on day one:
+
+```python
+print(0.1 + 0.2)
+print(0.1 + 0.2 == 0.3)
+
+from decimal import Decimal
+print(Decimal("0.1") + Decimal("0.2"))   # exact — the money type
+```
+
+```text
+0.30000000000000004
+False
+0.3
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+For money and anything that must round-trip exactly, use `decimal.Decimal` (construct from
+strings) — never float. For everything else, floats are fine; compare with a tolerance, not `==`.
+</blockquote>
+
+## Strings & f-strings
+
+Strings are immutable sequences of Unicode. You'll live in f-strings 99% of the time —
+they're the idiomatic way to format since 3.6, and `{expr=}` is a debugging superpower.
+
+```python
+word = "  Hello, world!  "
+print(word.strip().upper())
+print("a-b-c".split("-"), "-".join(["2026", "08", "21"]))
+print("cost: 42".replace("42", "99"), "x".join(reversed("abc")))
+
+name = "ada"
+print(f"hi {name.upper()}, you are {len(name)} letters")
+print(f"{name = }")            # the = is great for debugging
+pi = 3.14159265
+print(f"pi ≈ {pi:.2f}")        # format specs: 2 decimal places
+```
+
+```text
+HELLO, WORLD!
+['a', 'b', 'c'] 2026-08-21
+cost: 99 cxbxa
+hi ADA, you are 3 letters
+name = 'ada'
+pi ≈ 3.14
+```
+
+Useful string facts: `r"..."` is a raw string (no escape processing — for paths and regex),
+triple quotes `"""..."""` are for multi-line text and docstrings, and `in` does substring
+search: `"py" in "python"` is `True`.
+
+Python 3.14 adds **t-strings** — instead of rendering immediately, `t"..."` builds a
+`string.templatelib.Template` that keeps the *text pieces* and the *values* separate
+(loggers, i18n, and templating libs use this: store the template, bind values later):
+<span class="badge new">new 3.14</span>
+
+```python
+name = "ada"
+t = t"hi {name}, answer={3 * 3}"
+print(t.values)         # the values, kept live apart from the text
+print(t.strings)        # the literal text pieces (N+1 of them)
+
+# there is no built-in rendering — you walk the template yourself:
+def render(tpl) -> str:
+    return "".join(
+        part if isinstance(part, str) else str(part.value)
+        for part in tpl
+    )
+
+print(render(t))
+```
+
+```text
+('ada', 9)
+('hi ', ', answer=', '')
+hi ada, answer=9
+```
+
+## Lists & comprehensions
+
+Lists are ordered, mutable, heterogeneous — the default array. **List comprehensions** are
+the idiomatic way to build a list by transforming/filtering; they're faster than a
+`for` + `append` loop and read as the result, not the process.
+
+```python
+nums = [3, 1, 4, 1, 5, 9]
+nums.append(2)
+print(nums, nums[0], nums[-1], 3 in nums)
+
+squares = [x * x for x in range(6)]
+evens = [x for x in range(20) if x % 2 == 0]
+labels = [f"item-{i}" for i, n in enumerate(nums) if n % 2 == 1]
+print(squares)
+print(evens)
+print(labels)
+
+nums.sort()                       # in-place, returns None
+print(nums, max(nums), sum(nums))
+print(sorted(nums, reverse=True)) # returns a NEW list
+```
+
+```text
+[3, 1, 4, 1, 5, 9, 2] 3 2 True
+[0, 1, 4, 9, 16, 25]
+[0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+['item-0', 'item-1', 'item-3', 'item-4', 'item-5']
+[1, 1, 2, 3, 4, 5, 9] 9 25
+[9, 5, 4, 3, 2, 1, 1]
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+`list.sort()` mutates in place and returns `None`; `sorted(x)` always returns a new list —
+reach for `sorted()` in expressions and `.sort()` when you want to reuse the list. Keep
+comprehensions to one or two `for`s; if you need nested loops or conditionals, write a
+normal loop instead.
+</blockquote>
+
+## Tuples & unpacking
+
+Tuples are immutable, ordered sequences. They cost less memory than lists, hash (so they
+can be dict keys / set members), and are the idiomatic shape for *"a few fixed values that
+travel together"*.
+
+```python
+point = (3, 7)
+x, y = point
+print(x, y)
+
+a, b = 1, 2
+a, b = b, a          # the canonical swap — no temp variable
+print(a, b)
+
+first, *rest = [10, 20, 30, 40]   # star unpacking
+print(first, rest)
+
+pairs = [(1, "one"), (2, "two"), (3, "three")]
+for num, word in pairs:           # unpack while iterating
+    print(num, word)
+
+print(len((1,)))                  # (1) is the int 1 in parens; (1,) is a tuple
+```
+
+```text
+3 7
+2 1
+10 [20, 30, 40]
+1 one
+2 two
+3 three
+1
+```
+
+If you need *named* fields on an immutable record, don't reach for tuples — use
+`dataclasses` (covered later). Tuples are for `x, y` points, `(value, error)` pairs, and
+dict `.items()`.
+
+## Dictionaries
+
+The dict is Python's workhorse: hash map, insertion-ordered (since 3.7), with a small API
+that covers 95% of needs. `.get()` with a default is how you avoid `KeyError`.
+
+```python
+user = {"name": "ada", "age": 36}
+user["lang"] = "python"
+print(user)
+print(user.get("missing", "n/a"))
+print("name" in user)              # membership tests KEYS
+
+scores = {}
+for n in ["ada", "bob", "ada"]:
+    scores[n] = scores.get(n, 0) + 1
+print(scores)
+
+merged = {"a": 1, "b": 2} | {"b": 3, "c": 4}   # 3.9+ merge operator (right wins)
+print(merged)
+
+for k, v in merged.items():
+    print(k, "=", v)
+```
+
+```text
+{'name': 'ada', 'age': 36, 'lang': 'python'}
+n/a
+True
+{'ada': 2, 'bob': 1}
+{'a': 1, 'b': 3, 'c': 4}
+a = 1
+b = 3
+c = 4
+```
+
+The `setdefault` cousin is the classic "accumulate into a dict of lists" pattern:
+
+```python
+groups = {}
+for w in ["api", "web", "api", "db", "web"]:
+    groups.setdefault(w, []).append(w.upper())
+print(groups)
+```
+
+```text
+{'api': ['API', 'API'], 'web': ['WEB', 'WEB'], 'db': ['DB']}
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+Iterate with `.items()` (or just `for k in d` for keys). `d[a][b][c]` chains are fine in
+your own code — for JSON from the outside world, prefer `.get()` at each level or write a
+Pydantic model (later) and let it validate.
+</blockquote>
+
+## Sets
+
+Sets are unordered collections of unique items with O(1) membership. Use them for
+"already seen", deduplication, and set algebra — not for ordered data.
+
+```python
+tags = {"python", "api", "python", "auth"}
+print(sorted(tags))            # sorted() for display — set order is not guaranteed
+print("api" in tags)
+
+a = {1, 2, 3, 4}
+b = {3, 4, 5, 6}
+print(sorted(a | b), sorted(a & b), sorted(a - b))   # union, intersection, difference
+
+seen = set()
+for line in ["x", "y", "x", "z", "y"]:
+    if line not in seen:
+        print("first time:", line)
+    seen.add(line)
+```
+
+```text
+['api', 'auth', 'python']
+True
+[1, 2, 3, 4, 5, 6] [3, 4] [1, 2]
+first time: x
+first time: y
+first time: z
+```
+
+Set comprehension: `squares = {x * x for x in range(5)}` → `{0, 1, 4, 9, 16}`.
+`frozenset` is the immutable version (hashable — usable as a dict key).
+
+## Slicing & ranges
+
+Slicing works on any sequence: `seq[start:stop:step]`, where `stop` is exclusive, negative
+indices count from the end, and omitted parts mean "all the way".
+
+```python
+s = "abcdefgh"
+nums = list(range(10))
+
+print(s[:3], s[5:], s[::2], s[::-1])
+print(nums[2:7:2], nums[-3:])
+
+for i in range(3):                 # 0, 1, 2
+    print("i =", i)
+print(list(range(2, 8, 2)))        # start, stop, step
+print(list(range(5, 0, -1)))       # count down
+```
+
+```text
+abc fgh aceg hgfedcba
+[2, 4, 6] [7, 8, 9]
+i = 0
+i = 1
+i = 2
+[2, 4, 6]
+[5, 4, 3, 2, 1]
+```
+
+Idioms you'll want on muscle memory: `xs[-1]` (last), `xs[-3:]` (last three),
+`xs[:n]` (first n), `xs[::-1]` (reversed — or just `reversed(xs)`),
+`xs[i:j] = [...]` (slice *assignment* resizes the list in place).
+
+## Control flow
+
+`if`/`elif`/`else` is indentation, not braces. The subtle part every other-language
+programmer trips on: **truthiness**. Anything with a natural "empty-ness" is falsy.
+
+```python
+falsy = [0, 0.0, "", None, [], {}, ()]
+print([x for x in falsy if not x])      # all of them
+print(bool("0"), bool([0]), bool([]))   # non-empty string/list is truthy, even "0"/[0]
+
+temp = 21
+if temp < 0:
+    print("freezing")
+elif temp < 15:
+    print("cold")
+else:
+    print("fine:", temp)
+```
+
+```text
+[0, 0.0, '', None, [], {}, ()]
+True True False
+fine: 21
+```
+
+And the **match** statement (3.10+) — Python's real pattern matcher, ideal for routing
+on values (HTTP status codes are the canonical case):
+
+```python
+def describe(status: int) -> str:
+    match status:
+        case 200 | 204:
+            return "ok"
+        case 201 | 202:
+            return "created"
+        case s if 400 <= s < 500:    # guards are how you test ranges
+            return "client error"
+        case s if s >= 500:
+            return "server error"
+        case _:
+            return "unknown"
+
+for code in [200, 202, 404, 503, 199]:
+    print(code, "→", describe(code))
+```
+
+```text
+200 → ok
+202 → created
+404 → client error
+503 → server error
+199 → unknown
+```
+
+Cases are tried **top to bottom**; the first match wins. Guards (`case s if cond:`) are
+also how you test ranges — `..` range patterns looked great in the PEP but never shipped.
+Sequences/objects can be destructured too: `case (x, y):`.
+
+## Loops
+
+`for` is the default — it iterates *anything iterable* (lists, dicts, files, ranges…).
+`enumerate` and `zip` replace index bookkeeping; `while` exists for "loop until a condition".
+
+```python
+for i, name in enumerate(["ada", "bob", "cecilia"], start=1):
+    print(i, name)
+
+xs, ys = [1, 2, 3], [10, 20, 30]
+for x, y in zip(xs, ys):
+    print(x * y)
+
+n = 0
+while n < 5:
+    if n == 2:
+        n += 1
+        continue       # skip to next iteration
+    if n == 4:
+        break          # exit the loop
+    print("n =", n)
+    n += 1
+else:
+    print("else ran — it only runs if we did NOT break")
+```
+
+```text
+1 ada
+2 bob
+3 cecilia
+10
+40
+90
+n = 0
+n = 1
+n = 3
+```
+
+The `else` on a loop (also on `for`) runs when the loop finishes **without** `break` —
+it's the idiomatic "search loop" pattern: `for ... if found: break` / `else: raise`.
+`break` exits the innermost loop; there is no `continue-outer` — restructure instead.
+
+---
+
+# Functions
+
+## Functions
+
+`def`, indentation, `return` (anything — including several values, which are really a tuple).
+Functions are first-class objects: you can assign, pass, and return them.
+
+```python
+def greet(name: str, excited: bool = False) -> str:
+    """Return a greeting for name."""
+    return f"Hello, {name}!" + (" 🎉" if excited else "")
+
+print(greet("ada"))
+print(greet("bob", excited=True))
+
+def divide(a, b):
+    return a / b, a % b      # two return values → one tuple
+
+q, r = divide(17, 5)
+print(q, r)
+
+add = lambda x, y: x + y     # functions are values
+print(add(2, 3), greet.__name__)
+```
+
+```text
+Hello, ada!
+Hello, bob! 🎉
+3.4 2
+5 greet
+```
+
+The classic footgun — **mutable default arguments are created once, at def time**, and
+shared across every call:
+
+```python
+def buggy(x, acc=[]):        # ❌ the SAME list every call
+    acc.append(x)
+    return acc
+
+print(buggy(1))
+print(buggy(2))              # acc kept the 1 from the previous call
+
+def fixed(x, acc=None):      # ✅ the idiomatic fix
+    if acc is None:
+        acc = []
+    acc.append(x)
+    return acc
+
+print(fixed(1))
+print(fixed(2))
+```
+
+```text
+[1]
+[1, 2]
+[1]
+[2]
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+Small functions with one job, verb names, docstrings on public ones, type hints everywhere
+(you'll see the full typing toolkit later). Default arguments must be immutable or `None`.
+</blockquote>
+
+## *args, **kwargs, and argument order
+
+A signature has five lanes, in this order: positional-only, regular, `*`, keyword-only,
+`**kwargs`. You only need to read it fluently — you'll rarely use all five.
+
+```python
+def stats(*numbers, label: str = "stats") -> str:
+    #         ^*args: collect remaining POSITIONAL args as a tuple
+    total = sum(numbers)
+    return f"{label}: n={len(numbers)} total={total} avg={total / len(numbers):.1f}"
+
+print(stats(1, 2, 3))
+print(stats(10, 20, label="tens"))
+```
+
+```text
+stats: n=3 total=6 avg=2.0
+tens: n=2 total=30 avg=15.0
+```
+
+```python
+def connect(host: str, *, port: int = 80, **opts) -> dict:
+    #                 ^ everything after * is keyword-only; **opts collects extra KEYWORDS
+    return {"host": host, "port": port, **opts}
+
+print(connect("db1", port=5432, pool_size=10, ssl=True))
+
+def signature_demo(a, /, b, *, c):
+    #   ^ positional-only     ^ keyword-only
+    return (a, b, c)
+
+print(signature_demo(1, 2, c=3))
+print(signature_demo(1, b=2, c=3))
+# signature_demo(1, 2, 3)          # ❌ would raise: c is keyword-only
+```
+
+```text
+{'host': 'db1', 'port': 5432, 'pool_size': 10, 'ssl': True}
+(1, 2, 3)
+(1, 2, 3)
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+Don't design normal APIs with `*args`/`**kwargs` — explicit parameters are more readable
+and let mypy check them. They're for *forwarding* (decorators, wrappers, metaprogramming)
+and for genuinely variadic things.
+</blockquote>
+
+## Lambdas & higher-order functions
+
+Lambdas are anonymous one-expression functions. Their real home is as a **`key=`**
+argument to the sorting/min/max family — not as a replacement for comprehensions.
+
+```python
+users = [("ada", 36), ("bob", 21), ("cecilia", 50)]
+print(sorted(users, key=lambda u: u[1]))       # sort by age
+
+words = ["pi", "elephant", "fig", "banana"]
+print(sorted(words, key=len))
+print(max(words, key=len))
+```
+
+```text
+[('bob', 21), ('ada', 36), ('cecilia', 50)]
+['pi', 'fig', 'banana', 'elephant']
+elephant
+```
+
+```python
+from operator import itemgetter
+
+prices = [3.99, 12.5, 1.25, 99.0]
+print(list(map(round, prices)))
+print(list(filter(lambda p: p > 5, prices)))
+print(sorted(users, key=itemgetter(1)))        # operator.itemgetter — the no-lambda form
+```
+
+```text
+[4, 12, 1, 99]
+[12.5, 99.0]
+[('bob', 21), ('ada', 36), ('cecilia', 50)]
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+`map`/`filter` return lazy iterators; prefer a comprehension when you'd write one anyway.
+Lambdas can't contain statements (no `if`/`for` blocks), can't be assigned to a name —
+if it needs a name or a body, it's a `def`.
+</blockquote>
+
+## Closures & decorators
+
+A **closure** is a function that remembers variables from the scope where it was created.
+A **decorator** is a function that takes a function and returns an enhanced function —
+Python's mechanism for cross-cutting behavior (logging, caching, retries, auth checks).
+
+```python
+def make_multiplier(factor):
+    def multiply(x):              # "closes over" factor
+        return x * factor
+    return multiply
+
+double, triple = make_multiplier(2), make_multiplier(3)
+print(double(5), triple(5))
+
+import time
+
+def log_calls(fn):
+    def wrapper(*args, **kwargs):
+        result = fn(*args, **kwargs)
+        print(f"  {fn.__name__}(...) → {result!r}")   # timing: wrap in time.perf_counter()
+        return result
+    wrapper.__name__ = fn.__name__        # or use @functools.wraps(fn)
+    return wrapper
+
+@log_calls
+def fetch_total(items):
+    """Simulate a DB fetch."""
+    time.sleep(0.02)
+    return sum(items)
+
+print("total:", fetch_total([1, 2, 3, 4, 5]))
+```
+
+```text
+10 15
+  fetch_total(...) → 15
+total: 15
+```
+
+`@log_calls` above `def fetch_total` is exactly `fetch_total = log_calls(fetch_total)`.
+Order matters when stacking: decorators apply bottom-up.
+
+```python
+def shout(fn):
+    def wrapper(*a):
+        return fn(*a).upper()
+    return wrapper
+
+def exclaim(fn):
+    def wrapper(*a):
+        return fn(*a) + "!"
+    return wrapper
+
+@shout
+@exclaim
+def msg():
+    return "hi"
+
+print(msg())
+```
+
+```text
+HI!
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+Always preserve the wrapped function's identity with `@functools.wraps(fn)` — otherwise
+`__name__`/`__doc__` break and debugging gets stranger. Built-in decorators you'll use
+weekly: `@functools.lru_cache`, `@property`, `@staticmethod`, `@contextmanager`.
+</blockquote>
+
+## Iterators & generators
+
+An **iterator** has `__iter__`/`__next__`. A **generator** is a function with `yield` —
+it *produces* values lazily, one at a time, remembering where it left off. Generators are
+how Python streams: file lines, query results, and (crucially for backend work) chunked
+HTTP response bodies.
+
+```python
+def countdown(start):
+    n = start
+    while n > 0:
+        yield n          # pause here; resume here on the next value
+        n -= 1
+
+print(" ".join(map(str, countdown(3))))
+
+def ranges():
+    yield from range(3)      # delegate to another iterable
+    yield from range(3, 6)
+
+print(list(ranges()))
+```
+
+```text
+3 2 1
+[0, 1, 2, 3, 4, 5]
+```
+
+Generator expressions `(x for x in ...)` are the lazy cousins of list comprehensions —
+no list is built:
+
+```python
+sq = (x * x for x in range(100_000))
+print(type(sq).__name__)
+
+from itertools import islice
+print(list(islice(sq, 5)))                     # take what you need, build nothing else
+
+print(sum(x * x for x in range(1_000_000)))    # million-iteration loop, constant memory
+```
+
+```text
+generator
+[0, 1, 4, 9, 16]
+333332833333500000
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+Reach for generators when the sequence is big, infinite, or expensive to build. A generator
+can only be consumed **once** — if you need it twice, materialize a list. (You'll meet
+`async generator` in the async section; FastAPI streaming responses are one.)
+</blockquote>
+
+## Context managers
+
+`with` binds setup and teardown to a block, guaranteeing cleanup even on exceptions.
+Anything with `__enter__`/`__exit__` is a context manager: files, locks, DB sessions,
+httpx clients, DB transactions…
+
+```python
+path = "demo.txt"
+with open(path, "w") as f:      # file is CLOSED automatically, even if an error is raised
+    f.write("hello\n")
+with open(path) as f:
+    print(f.read().strip())
+
+from contextlib import contextmanager
+
+@contextmanager
+def work(label):
+    print(f"-- {label} start")
+    try:
+        yield
+    finally:
+        print(f"-- {label} done")
+
+with work("transaction"):
+    print("  committing…")
+```
+
+```text
+hello
+-- transaction start
+  committing…
+-- transaction done
+```
+
+Two helpers you'll actually use:
+
+```python
+from contextlib import suppress
+import math
+
+with suppress(ZeroDivisionError):
+    print(1 / 0)
+print("kept going")
+print(math.floor(1.7))
+
+from contextlib import ExitStack
+with ExitStack() as stack:      # dynamic number of context managers
+    for name in ["a", "b"]:
+        stack.enter_context(work(name))
+    print("  inside all of them")
+```
+
+```text
+kept going
+1
+-- a start
+-- b start
+  inside all of them
+-- b done
+-- a done
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+`@contextmanager` + `try/finally` around `yield` is the standard way to write your own —
+no class needed. If you find `try/finally` cleanup code repeating, it wants to be a
+context manager.
+</blockquote>
+
+---
+
+# Data, files & time
+
+## JSON
+
+JSON is the wire format of the backend world. `json.dumps` (dict → str), `json.loads`
+(str → dict); the `load`/`dump` variants read/write files.
+
+```python
+import json
+
+payload = {
+    "user": "ada",
+    "scores": [95, 87, 91],
+    "active": True,
+    "metadata": None,
+}
+text = json.dumps(payload, indent=2)
+print(text)
+
+back = json.loads(text)
+print(back["user"], back["scores"][0], type(back["metadata"]).__name__)
+```
+
+```text
+{
+  "user": "ada",
+  "scores": [
+    95,
+    87,
+    91
+  ],
+  "active": true,
+  "metadata": null
+}
+ada 95 NoneType
+```
+
+Mapping is total: `True/False/None` → `true/false/null`, lists → arrays, dicts → objects.
+With `indent`, nested lists get their own lines (3.12+); `ensure_ascii=False` keeps
+non-ASCII text (like `é`) readable instead of escaping it to ASCII — use it for
+user-facing text.
+For request/response bodies in a real app you'll usually hand this to a Pydantic model
+instead of raw dict surgery (backend section).
+
+## Files & pathlib
+
+Use **`pathlib.Path`** for anything file-related — it's the modern API and replaces
+`os.path` string fiddling. (In this browser sandbox you're writing to an in-memory
+filesystem; on your machine it's the real disk, same code.)
+
+```python
+from pathlib import Path
+
+base = Path("scratch") / "api"
+base.mkdir(parents=True, exist_ok=True)        # like mkdir -p
+
+cfg = base / "settings.json"
+cfg.write_text('{"env": "dev"}\n')             # open() + write in one call
+print(cfg.read_text().strip())
+
+print(cfg.suffix, cfg.stem, cfg.name)
+print(sorted(p.name for p in base.iterdir()))
+```
+
+```text
+{"env": "dev"}
+.json settings settings.json
+['settings.json']
+```
+
+```python
+log = Path("app.log")
+with log.open("a") as f:       # append mode
+    f.write("line one\n")
+with log.open("a") as f:
+    f.write("line two\n")
+print(log.read_text(), end="")
+print(len(log.read_text().splitlines()), "lines")
+```
+
+```text
+line one
+line two
+2 lines
+```
+
+```python
+csv_file = Path("data.csv")
+csv_file.write_text("name,score\nada,95\nbob,87\n")
+for line in csv_file.read_text().splitlines():   # streaming pattern for huge files:
+    print("|", line)                              # iterate the file object itself
+```
+
+```text
+| name,score
+| ada,95
+| bob,87
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+`write_text`/`read_text` for small files, `with open(...) as f:` for anything big — and
+iterate the file object directly (`for line in f:`) rather than `f.read()` on huge files.
+`.resolve()` for absolute paths, `.with_suffix(".bak")` for renaming, `.glob("*.py")`
+for patterns.
+</blockquote>
+
+## CSV
+
+The stdlib `csv` module is the default for tabular data in/out. `DictReader`/`DictWriter`
+give you dicts keyed by the header row — note **everything comes back as strings**.
+
+```python
+import csv
+from io import StringIO        # in-memory file; real code would open a .csv
+
+raw = """name,role,salary
+ada,lead,90
+bob,junior,50
+cecilia,lead,88
+"""
+rows = list(csv.DictReader(StringIO(raw)))
+print(rows)
+
+leads = [r for r in rows if r["role"] == "lead"]
+print(sum(int(r["salary"]) for r in leads))
+
+out = StringIO()
+w = csv.DictWriter(out, fieldnames=["name", "role"], extrasaction="ignore")
+w.writeheader()
+w.writerows(rows)
+print(out.getvalue().strip())
+```
+
+```text
+[{'name': 'ada', 'role': 'lead', 'salary': '90'}, {'name': 'bob', 'role': 'junior', 'salary': '50'}, {'name': 'cecilia', 'role': 'lead', 'salary': '88'}]
+178
+name,role
+ada,lead
+bob,junior
+cecilia,lead
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+Convert types at the edge (`int(r["salary"])`) or — better — pipe the CSV through a
+Pydantic model. For analysis-shaped work (grouping, joining, pivoting) reach for pandas
+instead of hand-rolling.
+</blockquote>
+
+## Dates & time
+
+`datetime.datetime` is both a point in time and (with `strptime`/`strftime`) a formatter.
+Two rules that save weeks of pain: **store and transmit UTC**, and **always use aware
+datetimes** (with `tzinfo`) — mixing naive and aware objects raises, which is a feature.
+
+```python
+from datetime import datetime, timedelta, timezone
+
+utc = timezone.utc
+d1 = datetime(2026, 8, 21, 9, 30, tzinfo=utc)
+d2 = datetime(2026, 9, 4, 17, 0, tzinfo=utc)
+print(d2 - d1)                              # timedelta
+
+stamp = datetime(2026, 8, 21, 15, 4, 9, tzinfo=utc)
+print(stamp.isoformat())                    # ISO 8601 — the wire format
+print(stamp.strftime("%Y-%m-%d %H:%M:%S %Z"))
+
+parsed = datetime.strptime("21/08/2026 15:04", "%d/%m/%Y %H:%M")
+print(parsed)                               # naive — no timezone!
+print(parsed.replace(tzinfo=utc))           # make it aware
+```
+
+```text
+14 days, 7:30:00
+2026-08-21T15:04:09+00:00
+2026-08-21 15:04:09 UTC
+2026-08-21 15:04:00
+2026-08-21 15:04:00+00:00
+```
+
+```python
+now = datetime.now(timezone.utc)
+print(now.isoformat(timespec="seconds"))
+
+from zoneinfo import ZoneInfo
+local = now.astimezone(ZoneInfo("Europe/Paris"))
+print(local.isoformat(timespec="minutes"))
+```
+
+```text
+2026-08-21T14:03:22+00:00        ← your actual current UTC time (seconds)
+2026-08-21T16:03+02:00           ← the same instant in Europe/Paris (minutes; +02:00 in August)
+```
+
+(In the browser, this page loads Pyodide's `tzdata` package for `zoneinfo` behind
+the scenes; ordinary Python gets the zone database from the OS.)
+
+`datetime.fromisoformat("2026-08-21T15:04:09+00:00")` parses what `isoformat()` produced —
+they're a matched pair, and both handle the `Z` suffix since 3.11. `date`/`time` are the
+no-time counterparts; `datetime.date.today()` for "what day is it".
+
+---
+
+# Object-oriented Python
+
+## Classes
+
+No constructor keyword, no `new`, no field declarations: `class` + `__init__` + `self`
+(passed explicitly, always first). Dunder (double-underscore) methods are how Python
+integrates your objects with the language: `print(obj)` calls `__repr__`, `len(obj)`
+calls `__len__`, `obj == other` calls `__eq__`, `obj["k"]` calls `__getitem__`.
+
+```python
+class User:
+    """A user account."""
+
+    def __init__(self, name: str, email: str) -> None:
+        self.name = name
+        self.email = email
+        self.login_count = 0
+
+    def __repr__(self) -> str:
+        return f"User(name={self.name!r}, email={self.email!r})"
+
+    def __eq__(self, other) -> bool:
+        return isinstance(other, User) and self.email == other.email
+
+    def login(self) -> None:
+        self.login_count += 1
+
+ada = User("ada", "ada@ex.com")
+print(ada)                       # → __repr__
+ada.login()
+ada.login()
+print(ada.login_count, ada == User("ada-louisa", "ada@ex.com"))   # → __eq__
+```
+
+```text
+User(name='ada', email='ada@ex.com')
+2 True
+```
+
+`@property` gives computed/validated attributes that still *look* like attributes:
+
+```python
+class Temperature:
+    def __init__(self, celsius: float) -> None:
+        self._celsius = celsius
+
+    @property
+    def celsius(self) -> float:
+        return self._celsius
+
+    @property
+    def fahrenheit(self) -> float:
+        return self._celsius * 9 / 5 + 32
+
+    @celsius.setter
+    def celsius(self, value: float) -> None:
+        if value < -273.15:
+            raise ValueError("below absolute zero")
+        self._celsius = value
+
+t = Temperature(25)
+print(t.celsius, round(t.fahrenheit, 1))
+t.celsius = 100
+print(t.fahrenheit)
+# t.celsius = -300            # ❌ would raise ValueError
+```
+
+```text
+25 77.0
+212.0
+```
+
+Visibility is *convention*, not enforcement: `_leading` means "internal", `__leading`
+triggers name-mangling. `@classmethod` for alternate constructors (`User.from_json(...)`),
+`@staticmethod` only when the method doesn't touch the instance.
+
+<blockquote><span class="bq-label">Best practice</span>
+Python OOP is pragmatic: inherit when it's really "is-a", prefer composition otherwise,
+and define `__repr__` on anything you'll print in logs. If a class just carries data,
+stop — that's a `dataclass`.
+</blockquote>
+
+## dataclasses
+
+`@dataclass` generates `__init__`, `__repr__`, `__eq__` (and friends) from field
+annotations. It's the default for "record with behavior" in modern code.
+
+```python
+from dataclasses import dataclass, field, asdict
+
+@dataclass(slots=True, frozen=True)
+class Point:
+    x: float
+    y: float
+    label: str = "p"
+
+    def __str__(self) -> str:
+        return f"({self.x}, {self.y}) {self.label}"
+
+a, b = Point(1, 2), Point(1, 2)
+print(a, a == b, hash(a) == hash(b))
+# a.x = 5                     # ❌ would raise: frozen=True
+
+@dataclass
+class User:
+    name: str
+    tags: list[str] = field(default_factory=list)   # mutable defaults → factory
+    created: str = "1970-01-01"
+
+    def __post_init__(self) -> None:
+        self.tags = [t.lower() for t in self.tags]  # validation/normalization hook
+
+u = User("ada", tags=["Admin", "Beta"])
+print(u, asdict(u))
+```
+
+```text
+(1, 2) p True True
+User(name='ada', tags=['admin', 'beta'], created='1970-01-01') {'name': 'ada', 'tags': ['admin', 'beta'], 'created': '1970-01-01'}
+```
+
+Knobs that matter: `frozen=True` (immutable, hashable), `slots=True` (smaller, faster,
+no attribute typos), `kw_only=True` (3.10+), `order=True` (sortable). `asdict`/`astuple`
+for (shallow) conversion.
+
+<blockquote><span class="bq-label">Best practice</span>
+Dataclass for internal records; **Pydantic model** for anything crossing a boundary
+(API input/output, config) — Pydantic *validates* types, dataclasses just hold them.
+You'll see both in the backend section.
+</blockquote>
+
+## Enums
+
+For closed sets of named values — status, role, kind — use an enum instead of bare
+strings scattered through the code. `StrEnum` (3.11+) is also a `str`, so it serializes
+and compares like one: perfect for JSON APIs.
+
+```python
+from enum import StrEnum
+
+class OrderStatus(StrEnum):
+    PENDING = "pending"
+    PAID = "paid"
+    SHIPPED = "shipped"
+    CANCELLED = "cancelled"
+
+print(OrderStatus.PAID, OrderStatus.PAID.value, OrderStatus.PAID == "paid")
+
+def transition(s: OrderStatus) -> str:
+    match s:
+        case OrderStatus.PENDING:
+            return "can pay or cancel"
+        case OrderStatus.PAID:
+            return "can ship"
+        case OrderStatus.SHIPPED | OrderStatus.CANCELLED:
+            return "terminal"
+
+for s in OrderStatus:
+    print(f"{s.value:10} → {transition(s)}")
+```
+
+```text
+paid paid True
+pending    → can pay or cancel
+paid       → can ship
+shipped    → terminal
+cancelled  → terminal
+```
+
+`Enum` with `.value` for non-string members, `auto()` for auto-numbered ones,
+`Flag`/`IntFlag` for bitfield option sets.
+
+## Exceptions
+
+`try` / `except` / `else` / `finally`. Catch **specific** exceptions, never bare
+`except:`; let what you don't understand propagate. `else` runs when *no* exception
+was raised — keeps success-path code out of the `try`.
+
+```python
+def fetch_price(symbol: str) -> float:
+    prices = {"ada": 99.9}
+    if symbol not in prices:
+        raise KeyError(symbol)
+    return prices[symbol]
+
+try:
+    fetch_price("bob")
+except KeyError as e:
+    print("missing:", e)
+else:
+    print("only runs if no exception")
+finally:
+    print("always runs")
+
+try:
+    fetch_price("ada")
+except KeyError:
+    pass
+else:
+    print("ada is fine")
+```
+
+```text
+missing: 'bob'
+always runs
+ada is fine
+```
+
+Custom exceptions: subclass `Exception` (or a base class for your app), carry context:
+
+```python
+class AppError(Exception):
+    """Base for all errors this app defines."""
+
+class NotFoundError(AppError):
+    def __init__(self, entity: str, id: int) -> None:
+        super().__init__(f"{entity} {id} not found")
+        self.entity, self.id = entity, id
+
+try:
+    raise NotFoundError("user", 42)
+except NotFoundError as e:
+    print(e, "|", e.entity, e.id)
+except AppError as e:             # base catches the whole family
+    print("generic app error:", e)
+```
+
+```text
+user 42 not found | user 42
+```
+
+And **exception groups** (3.11+) — for when a batch of operations fails in several ways
+at once (very common in fan-out HTTP code): <span class="badge new">new 3.11</span>
+
+```python
+errors = [ValueError("bad a"), TypeError("bad b")]
+try:
+    raise ExceptionGroup("batch failed", errors)
+except* ValueError as eg:
+    print("value errors:", [str(e) for e in eg.exceptions])
+except* TypeError:
+    print("type errors handled")
+print("survived")
+```
+
+```text
+value errors: ['bad a']
+type errors handled
+survived
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+Exceptions are for *unusual* conditions, not flow control. In API code, translate domain
+exceptions to HTTP responses (FastAPI handlers and `HTTPException` — next section).
+Log the full traceback (`logger.exception(...)`) at the place you catch-and-handle.
+</blockquote>
+
+---
+
+# Type hints
+
+## Type hints (the modern syntax)
+
+Hints are metadata, checked **statically** by mypy — Python ignores them at runtime,
+which is why the interpreter happily runs code mypy rejects. In 2026 you write *modern*
+syntax: builtin generics (`list[int]`, never `List[int]`), `|` unions (`str | None`,
+never `Optional[str]`), and PEP 695 (3.12+) `type` aliases.
+
+```python
+type UserId = int                      # PEP 695 type alias (3.12+)
+type NameEmail = tuple[str, str]
+
+USERS: dict[UserId, str] = {1: "ada", 2: "bob"}
+
+def get_user(user_id: UserId) -> str | None:
+    return USERS.get(user_id)
+
+print(get_user(1), get_user(3))
+```
+
+```text
+ada None
+```
+
+```python
+from typing import Literal
+
+class Account:
+    def __init__(self, kind: Literal["bank", "wallet"]) -> None:
+        self.kind = kind               # mypy: only "bank" or "wallet" allowed
+
+a = Account("bank")
+print(a.kind)
+# Account("paypal")   # mypy: Argument 1 has incompatible type "Literal['paypal']"
+```
+
+```text
+bank
+```
+
+Generic classes — PEP 695 declares the type parameter *right in the class signature*
+(3.12+); pre-3.12 code wrote `T = TypeVar("T")` + `class Stack(Generic[T])`: <span class="badge new">new 3.12</span>
+
+```python
+class Stack[T]:
+    """Generic stack — T is pinned per-instantiation by mypy."""
+
+    def __init__(self) -> None:
+        self._items: list[T] = []
+
+    def push(self, item: T) -> None:
+        self._items.append(item)
+
+    def pop(self) -> T:
+        return self._items.pop()
+
+s: Stack[int] = Stack()
+s.push(1)
+s.push(2)
+print(s.pop(), s.pop())
+# s.push("oops")    # mypy: incompatible type "str"; expected "int"
+```
+
+```text
+2 1
+```
+
+```python
+from typing import Self
+
+class Query:
+    def __init__(self, base_url: str) -> None:
+        self.base_url = base_url
+
+    def with_param(self, key: str, value: str) -> Self:
+        # returning Self (not Query) lets subclasses chain correctly
+        self.base_url = f"{self.base_url}/{key}={value}"
+        return self
+
+q = Query("https://api.example.com").with_param("q", "py").with_param("n", "5")
+print(q.base_url)
+```
+
+```text
+https://api.example.com/q=py/n=5
+```
+
+And the payoff — mypy turns all of this into a safety net:
+
+```bash
+$ uvx mypy demo.py
+demo.py:9: error: Argument 1 to "push" of "Stack" has incompatible type "str"; expected "int"  [arg-type]
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+Annotate **function signatures** (params + return) first — that's 90% of the value.
+`X | None` for optional values. `type Alias = ...` instead of `TypeAlias`. 3.14 makes
+annotations lazily evaluated (PEP 649), so forward references mostly stop being a
+headache — you rarely need `from __future__ import annotations` anymore.
+</blockquote>
+
+---
+
+# Async Python
+
+## Coroutines & await
+
+Async is *cooperative* concurrency: one thread, many coroutines, all sharing the CPU and
+switching only at `await` points. It shines for I/O-bound work — exactly what an API
+does (waiting on databases, upstream HTTP calls) — where hundreds of requests can be
+in flight with one thread.
+
+A coroutine function (`async def`) returns a **coroutine object** when called — nothing
+runs until you `await` it:
+
+```python
+import asyncio
+
+async def fetch_user(user_id: int) -> dict:
+    await asyncio.sleep(0.05)          # simulates a network round-trip (releases the loop)
+    return {"id": user_id, "name": f"user{user_id}"}
+
+c = fetch_user(1)
+print(type(c).__name__)                # created — but not a single line has executed
+c.close()                              # discard without running (no "never awaited" warning)
+
+async def main() -> None:
+    user = await fetch_user(1)         # now it runs, pausing at the sleep
+    print(user)
+
+asyncio.run(main())                    # creates + drives the event loop (once, at entry point)
+```
+
+```text
+coroutine
+{'id': 1, 'name': 'user1'}
+```
+
+`await` can only appear inside another `async def` (or at module top level in this
+playground, which wraps it for you). In a real app, **the framework runs the loop** —
+uvicorn/FastAPI call your `async def` endpoints; you just write coroutines and await.
+
+## Tasks, gather & TaskGroup
+
+`await` runs things one at a time; **tasks** run them concurrently on the same loop.
+`asyncio.gather` is fan-out; `TaskGroup` (3.11+) adds structured concurrency — if one
+task fails, its siblings are cancelled automatically:
+
+```python
+import asyncio, time
+
+async def fetch(user_id: int) -> dict:
+    await asyncio.sleep(0.05)
+    return {"id": user_id}
+
+async def main() -> None:
+    t0 = time.perf_counter()
+    for uid in [1, 2, 3]:            # serial: total ≈ 3 × 50 ms
+        await fetch(uid)
+    print(f"serial:     {(time.perf_counter() - t0) * 1000:.0f} ms")
+
+    t0 = time.perf_counter()
+    results = await asyncio.gather(fetch(1), fetch(2), fetch(3))   # concurrent: ≈ 50 ms
+    print(f"concurrent: {(time.perf_counter() - t0) * 1000:.0f} ms")
+    print([r["id"] for r in results])
+
+asyncio.run(main())
+```
+
+```text
+serial:     ≈150 ms
+concurrent: ≈50 ms
+[1, 2, 3]
+```
+
+```python
+import asyncio
+
+async def flaky(name: str) -> str:
+    await asyncio.sleep(0.01)
+    if name == "boom":
+        raise RuntimeError(f"{name} failed")
+    return name
+
+async def main() -> None:
+    try:
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(flaky("a"))
+            tg.create_task(flaky("boom"))
+            tg.create_task(flaky("c"))
+    except* RuntimeError as eg:
+        print("caught:", [str(e) for e in eg.exceptions])
+    print("survived — failed task's siblings were cancelled for us")
+
+asyncio.run(main())
+```
+
+```text
+caught: ['boom failed']
+survived — failed task's siblings were cancelled for us
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+Default to `TaskGroup` (the 3.11+ standard); `gather` when you want all results and are
+handling errors yourself. Never call blocking code (`time.sleep`, `requests`) inside an
+async function — it stalls the whole loop. CPU-bound work belongs in
+`asyncio.to_thread(...)`, not async.
+</blockquote>
+
+## Async context managers & async iteration
+
+Async code has its own `with` and `for`: `async with` / `async for`. You'll meet both
+when using async DB sessions, httpx clients, and streaming responses.
+
+```python
+import asyncio
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def db_session():
+    print("  connected")
+    try:
+        yield {"rows": []}
+    finally:
+        print("  closed")
+
+async def main() -> None:
+    async with db_session() as db:
+        db["rows"].append(1)
+        print("  rows:", db["rows"])
+
+    async def counter():
+        for i in range(3):
+            await asyncio.sleep(0.01)
+            yield i
+
+    async for v in counter():
+        print("  got", v)
+
+asyncio.run(main())
+```
+
+```text
+  connected
+  rows: [1]
+  closed
+  got 0
+  got 1
+  got 2
+```
+
+Async generators (`async def` + `yield`) are the shape of streaming responses — a
+FastAPI endpoint yielding chunks is exactly this pattern.
+
+---
+
+# Backend patterns
+
+## HTTP clients: httpx
+
+`requests` is the classic; **httpx** is the modern successor — HTTP/2, first-class
+timeouts, and an async client that's the natural pair for FastAPI. The patterns are the
+same in both: context manager, `base_url`, an explicit timeout, `raise_for_status()`,
+then `.json()`.
+
+```python no-run title=client.py
+import httpx
+
+# --- sync client: scripts, tests, non-async code ---
+with httpx.Client(base_url="https://api.example.com", timeout=5.0) as client:
+    r = client.get("/users/42")
+    r.raise_for_status()          # 4xx/5xx → httpx.HTTPStatusError
+    user = r.json()
+
+# --- async client: inside FastAPI endpoints / asyncio code ---
+async def fetch_users() -> list[dict]:
+    async with httpx.AsyncClient(base_url="https://api.example.com", timeout=5.0) as client:
+        r = await client.get("/users")
+        r.raise_for_status()
+        return r.json()
+```
+
+(The live call can't run in this browser sandbox — CORS and no installed package — but the
+*retry* pattern every API client needs is pure logic, so here it is, runnable, with a fake
+transport that 503s twice before succeeding: <span class="badge ref">reference</span>)
+
+```python
+import asyncio
+
+attempts = {"n": 0}
+
+async def flaky_get() -> dict:
+    """Stands in for httpx: 503 twice, then 200."""
+    attempts["n"] += 1
+    await asyncio.sleep(0.01)
+    if attempts["n"] <= 2:
+        raise ConnectionError(f"503 (attempt {attempts['n']})")
+    return {"ok": True, "attempt": attempts["n"]}
+
+async def get_with_retry(url: str, retries: int = 3, base_delay: float = 0.02) -> dict:
+    """Exponential backoff — the retry pattern every API client needs."""
+    delay = base_delay
+    last_exc: Exception | None = None
+    for attempt in range(1, retries + 2):
+        try:
+            return await flaky_get()
+        except ConnectionError as e:
+            last_exc = e
+            print(f"  retry {attempt}: {e} — backing off {delay:.2f}s")
+            await asyncio.sleep(delay)
+            delay *= 2
+    raise RuntimeError(f"all {retries} retries failed") from last_exc
+
+async def main() -> None:
+    print(await get_with_retry("https://api.example.com/users"))
+
+asyncio.run(main())
+```
+
+```text
+  retry 1: 503 (attempt 1) — backing off 0.02s
+  retry 2: 503 (attempt 2) — backing off 0.04s
+{'ok': True, 'attempt': 3}
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+Always set a timeout (the default is to wait forever). Put a retry with backoff on
+idempotent calls only (GETs — never blind-retry a POST that might have landed). Add
+jitter (`delay * (0.5 + random.random())`) in production so a fleet of clients doesn't
+stampede the upstream in lockstep.
+</blockquote>
+
+## FastAPI & Pydantic
+
+**FastAPI**: async-first web framework; type-annotated parameters *are* the validation,
+the routing docs (OpenAPI/Swagger is generated for free), and the security boundary.
+**Pydantic** (v2): the validation layer — declare a model, get parsing + type coercion +
+constraint checking at every boundary for free.
+
+```python no-run title=app/main.py
+from fastapi import FastAPI, HTTPException, Depends
+from pydantic import BaseModel, Field
+import httpx
+
+app = FastAPI()
+
+# ---- Pydantic models: the API's contract, validated automatically ----
+class UserIn(BaseModel):
+    name: str = Field(min_length=1)
+    email: str
+    age: int = Field(ge=0, le=130, default=0)
+
+class UserOut(BaseModel):
+    id: int
+    name: str
+    email: str
+
+DB: dict[int, UserOut] = {}
+_next_id = 1
+
+@app.get("/users/{user_id}", response_model=UserOut)
+async def get_user(user_id: int) -> UserOut:
+    user = DB.get(user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail=f"user {user_id} not found")
+    return user
+
+@app.post("/users", response_model=UserOut, status_code=201)
+async def create_user(user_in: UserIn) -> UserOut:
+    global _next_id
+    user = UserOut(id=_next_id, name=user_in.name, email=user_in.email)
+    DB[user.id] = user
+    _next_id += 1
+    return user
+
+# ---- dependency injection: clients, DB sessions, auth — all swappable in tests ----
+async def upstream() -> httpx.AsyncClient:
+    async with httpx.AsyncClient(base_url="https://upstream.example.com") as client:
+        yield client              # request-scoped lifecycle, managed by FastAPI
+
+@app.get("/status")
+async def status(client: httpx.AsyncClient = Depends(upstream)):
+    r = await client.get("/health")
+    return {"upstream": r.status_code}
+```
+
+```bash
+uv add fastapi httpx
+uv run uvicorn app.main:app --reload     # dev server, hot reload
+curl -X POST localhost:8000/users -H 'content-type: application/json' \
+     -d '{"name": "ada", "email": "ada@ex.com"}'
+curl localhost:8000/users/1
+curl localhost:8000/docs                  # free interactive Swagger UI
+```
+
+What makes this *the* 2026 stack: `user_in: UserIn` in the signature parses and validates
+the JSON body; a bad payload becomes a `422` with a precise error — zero hand-rolled
+checking. `HTTPException(status_code=...)` becomes the JSON error response. `Depends`
+makes every collaborator injectable, which makes the whole thing testable. The
+exception → HTTP mapping, runnable in miniature:
+
+```python
+def to_http_error(exc: Exception) -> tuple[int, dict]:
+    match exc:
+        case KeyError():
+            return 404, {"detail": f"{exc.args[0]} not found"}
+        case PermissionError():
+            return 403, {"detail": "forbidden"}
+        case _:
+            return 500, {"detail": "internal error"}
+
+print(to_http_error(KeyError("user 42")))
+print(to_http_error(PermissionError()))
+print(to_http_error(ValueError("boom")))
+```
+
+```text
+(404, {'detail': 'user 42 not found'})
+(403, {'detail': 'forbidden'})
+(500, {'detail': 'internal error'})
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+Return Pydantic models (or `dict`) from endpoints and let `response_model` shape the
+output — never serialize by hand. Keep route handlers thin: parse → call a service
+function → return. Service functions are plain, testable, sync-or-async.
+</blockquote>
+
+## Configuration & secrets
+
+The working pattern: **secrets from the environment** (12-factor), **dumb config from a
+file**, assembled once at startup into a typed settings object that you pass around (or
+inject). `tomllib` (3.11+) reads TOML in the stdlib — no dependency for `config.toml`.
+
+```python
+import os, tomllib
+from pathlib import Path
+from dataclasses import dataclass
+
+# 1. env vars — per-environment values and all secrets
+os.environ["DATABASE_URL"] = "postgres://user:pw@localhost/mydb"
+debug = os.getenv("DEBUG", "0") == "1"          # default when unset
+print("debug:", debug, "| db:", os.environ["DATABASE_URL"].split("@")[-1])
+
+# 2. TOML file — non-secret config (3.11+: stdlib)
+Path("config.toml").write_text("""
+[app]
+name = "myapi"
+env = "dev"
+
+[app.http]
+timeout = 5.0
+retries = 3
+""")
+with open("config.toml", "rb") as f:            # note: binary mode, tomllib does the rest
+    cfg = tomllib.load(f)
+print(cfg["app"]["name"], cfg["app"]["http"]["retries"])
+
+# 3. assemble into one typed object
+@dataclass(frozen=True)
+class Settings:
+    name: str
+    env: str
+    timeout: float
+    retries: int
+    db_url: str
+    debug: bool
+
+settings = Settings(
+    name=cfg["app"]["name"],
+    env=cfg["app"]["env"],
+    timeout=cfg["app"]["http"]["timeout"],
+    retries=cfg["app"]["http"]["retries"],
+    db_url=os.environ["DATABASE_URL"],
+    debug=debug,
+)
+print(settings)
+```
+
+```text
+debug: False | db: localhost/mydb
+myapi 3
+Settings(name='myapi', env='dev', timeout=5.0, retries=3, db_url='postgres://user:pw@localhost/mydb', debug=False)
+```
+
+In a real project, `pydantic-settings` does step 3 for you — env vars mapped straight
+onto a model:
+
+```python no-run title=app/config.py
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="APP_", env_file=".env")
+    database_url: str
+    timeout: float = 5.0
+    debug: bool = False
+
+settings = Settings()
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+`.env` files for local dev only — **gitignored, never committed**, and never the source
+of truth in production (secrets live in the platform's secret store). Read config once at
+startup; passing a `Settings` object around beats scattering `os.getenv` calls through
+modules.
+</blockquote>
+
+## Logging
+
+Not `print` — the `logging` module. One logger per module, named by the module, configured
+*once* at the app entry point.
+
+```python
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)-8s %(name)s — %(message)s",
+)
+log = logging.getLogger("myapi.orders")        # real code: logging.getLogger(__name__)
+
+def place_order(order_id: int, total: float) -> None:
+    log.info("placing order %s (%.2f)", order_id, total)   # lazy %-formatting, not f-strings
+    if total > 1000:
+        log.warning("large order %s", order_id)
+
+place_order(1, 42.50)
+place_order(2, 1500.00)
+log.debug("you won't see me at INFO level")
+
+try:
+    raise ConnectionError("db unreachable")
+except Exception:
+    log.exception("order pipeline failed")    # logs message + full traceback
+```
+
+```text
+INFO     myapi.orders — placing order 1 (42.50)
+INFO     myapi.orders — placing order 2 (1500.00)
+WARNING  myapi.orders — large order 2
+ERROR    myapi.orders — order pipeline failed
+Traceback (most recent call last):
+  …   ← frame lines vary a little by environment
+ConnectionError: db unreachable
+```
+
+Levels: `DEBUG < INFO < WARNING < ERROR < CRITICAL`. Use `%`-style args (not f-strings) so
+disabled messages are never formatted. In production, add a JSON formatter
+(`python-json-logger`, `structlog`) so your log pipeline can parse it.
+
+<blockquote><span class="bq-label">Best practice</span>
+`logger = logging.getLogger(__name__)` at the top of every module. Libraries and
+submodules never call `basicConfig` — only the entry point does. `log.exception()` inside
+an `except` block is the "log it *and* keep going" idiom.
+</blockquote>
+
+---
+
+# Testing & tooling
+
+## pytest
+
+The default test framework. Its whole trick: **plain `assert`** — no test classes, no
+`self.assertEqual`, failures show you a diff of both sides. Tests are just functions named
+`test_*` in files named `test_*.py`.
+
+```python
+def clamp(x: float, lo: float, hi: float) -> float:
+    if lo > hi:
+        raise ValueError("lo > hi")
+    return max(lo, min(hi, x))
+
+# this exact assert is what a pytest test contains
+assert clamp(5, 0, 10) == 5
+assert clamp(-3, 0, 10) == 0
+assert clamp(42, 0, 10) == 10
+print("asserts passed")
+
+try:
+    assert clamp(1, 10, 0) == 5
+except ValueError as e:
+    print("raised as expected:", e)
+```
+
+```text
+asserts passed
+raised as expected: lo > hi
+```
+
+A real test file looks like this — `parametrize` for data-driven cases, `pytest.raises`
+for the error path:
+
+```python no-run title=tests/test_users.py
+import pytest
+from app.models import clamp
+
+def test_clamp_middle():
+    assert clamp(5, 0, 10) == 5
+
+@pytest.mark.parametrize("x, lo, hi, want", [
+    (-3, 0, 10, 0),
+    (42, 0, 10, 10),
+    (5, 0, 10, 5),
+])
+def test_clamp_bounds(x, lo, hi, want):
+    assert clamp(x, lo, hi) == want
+
+def test_clamp_reversed_range_raises():
+    with pytest.raises(ValueError, match="lo > hi"):
+        clamp(1, 10, 0)
+```
+
+Fixtures are functions marked `@pytest.fixture` that inject setup per-test — `tmp_path`
+is built in for file tests; for FastAPI, the `TestClient` / `httpx.ASGITransport` combo
+lets you hit your real app in-process:
+
+```bash
+uv add --dev pytest
+uv run pytest -q                                        # everything, quiet
+uv run pytest tests/test_users.py::test_clamp_middle    # one test
+uv run pytest --cov=app                                 # with pytest-cov
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+Test behavior, not implementation: call the public function, assert the result. One
+scenario per test, name it `test_<unit>_<condition>`. For API tests, test through the
+HTTP layer (status code + JSON body), not by poking internals. Run pytest in CI before
+merge, always.
+</blockquote>
+
+## The stdlib toolbox
+
+Six modules that cover most of the rest of your week, all runnable:
+
+```python
+from collections import Counter, defaultdict
+from itertools import islice, chain
+
+c = Counter(["a", "b", "a", "c", "a", "b"])
+print(c.most_common(2), "total:", sum(c.values()), "kinds:", len(c))
+
+by_role = defaultdict(list)
+for name, role in [("ada", "lead"), ("bob", "dev"), ("cecilia", "lead")]:
+    by_role[role].append(name)
+print(dict(by_role))
+
+print(list(islice(iter(range(100)), 3)))
+print(list(chain([1], (2, 3), ["x"])))
+```
+
+```text
+[('a', 3), ('b', 2)] total: 6 kinds: 3
+{'lead': ['ada', 'cecilia'], 'dev': ['bob']}
+[0, 1, 2]
+[1, 2, 3, 'x']
+```
+
+```python
+import functools, uuid
+
+@functools.lru_cache(maxsize=128)
+def fib(n: int) -> int:
+    """fib(30) naive = ~2.7M calls; cached = 30."""
+    return n if n < 2 else fib(n - 1) + fib(n - 2)
+
+print(fib(30), "cache hits:", fib.cache_info().hits)
+
+partial = functools.partial(int, base=16)
+print(partial("ff"))
+
+print(str(uuid.uuid4())[:8] + "…")     # varies — that's the point of uuid4
+```
+
+```text
+832040 cache hits: 28
+255
+a3f91b2c…   ← varies every run
+```
+
+Quick map of where things live: `json`, `csv`, `tomllib` (serialization) · `pathlib`
+(files) · `datetime`, `time` (time) · `collections` (Counter, defaultdict, namedtuple) ·
+`itertools` (lazy sequence tools) · `functools` (lru_cache, partial, cached_property) ·
+`contextlib` (with-statements) · `dataclasses`, `enum` (structure) · `logging` (logs) ·
+`re` (regex) · `sqlite3` (embedded DB) · `argparse` (CLI flags) · `subprocess` (run
+other commands) · `http.server` (five-line static file server).
+
+---
+
+# Cheat sheet: translating your instincts
+
+The one-page version — the transformations that make Python code read *Pythonic*:
+
+| You want to… | Reach for | Not |
+|---|---|---|
+| build a list from a collection | `[f(x) for x in xs if ...]` | `for` loop + `.append()` |
+| format a string | f-string `f"{x}"` | `"%"` or `.format()` |
+| a record with fields | `@dataclass` / Pydantic model | 50-line `__init__` |
+| a closed set of values | `enum.StrEnum` | string constants |
+| guaranteed cleanup | `with ... as` | try/finally sprinkled everywhere |
+| lazy big/infinite sequence | generator (`yield`) | building the whole list |
+| cross-cutting behavior | decorator | copy-pasted wrapper code |
+| file paths | `pathlib.Path` | `os.path.join` strings |
+| config | env vars + typed `Settings` | hardcoded, `getattr` chains |
+| logging | `logging.getLogger(__name__)` | `print()` |
+| tests | pytest + `assert` | unittest classes |
+| "is it in the collection" | `in dict` / `in set` (O(1)) | scanning a list |
+| swap two values | `a, b = b, a` | temp variable |
+| a function as a value | pass it directly (or `lambda` for `key=`) | string-based callbacks |
+| errors | `raise`/`except SpecificError` | error codes, `try` around everything |
+| concurrency for I/O | `asyncio` + `TaskGroup` | a thread per request |
+| version control of deps | `uv` / lockfile | "pip install whatever" |
+
+**If in doubt:** read it out loud. Python code should read close to English — if your
+function name isn't a verb phrase or your comprehension needs a comment, restructure.
+That's the whole game. Good luck with the week. 🐍
+
+%%MORE%%
+
+# Getting started
+
+## Hello World & running Python
+
+`print()` is your terminal. `#` starts a comment. Python files end in `.py`.
+
+```python
+print("Hello, world!")
+print("This is real CPython 3.14, running as WebAssembly in your tab.")
+print(1 + 2, 2 ** 10, 10 / 4, 10 // 4)
+```
+
+```text
+Hello, world!
+This is real CPython 3.14, running as WebAssembly in your tab.
+3 1024 2.5 2
+```
+
+On a real machine you have three entry points:
+
+```bash
+python main.py           # run a script
+python                   # interactive REPL — try it, it's a great scratchpad
+python -c "print(6 * 7)" # quick one-liner
+```
+
+<blockquote><span class="bq-label">Convention</span>
+Executable scripts get a shebang first line and the executable bit, so `./main.py` works:
+`#!/usr/bin/env python3`. You rarely need this for app entry points — you'll run
+`uvicorn app.main:app` or `python -m app` instead.
+</blockquote>
+
+## Virtual environments & pip
+
+**Never install packages into your system Python.** Every project gets its own virtual
+environment (a `.venv/` directory with an isolated site-packages). `pip` is the package
+installer; it installs *into the active environment*.
+
+```bash
+python -m venv .venv              # create the environment (once, per project)
+source .venv/bin/activate         # activate  (Windows: .venv\Scripts\activate)
+pip install fastapi httpx         # now installs go into .venv
+pip freeze > requirements.txt     # snapshot exact versions
+pip install -r requirements.txt   # restore them on another machine
+deactivate
+```
+
+The modern fast way is [`uv`](https://docs.astral.sh/uv/) (Rust, 10–100× faster, manages the
+venv and a lockfile for you). Many new projects never touch `venv`/`pip` commands directly:
+
+```bash
+uv venv                  # create .venv
+uv add fastapi httpx     # add dependency to pyproject.toml, install it
+uv sync                  # install exactly what uv.lock says
+uv run uvicorn app.main:app
+```
+
+<blockquote><span class="bq-label">Best practice</span>
+Commit `pyproject.toml` (or `requirements.txt`) and `.venv/` is always in `.gitignore`.
+Pin or lock versions in anything you deploy. If a teammate says "works on my machine",
+it's almost always a missing dependency — the lockfile is the fix.
+</blockquote>
+
+## Project layout & imports
+
+A `.py` file is a **module**; a directory of modules with an `__init__.py` is a **package**.
+`import` is how code gets reused. Python exposes four import shapes — pick by readability:
+
+```python
+import math                                  # the module, use math.sqrt
+import os, sys                               # several at once (comma)
+from collections import Counter              # a specific name (most common choice)
+from datetime import datetime, timedelta     # several names from one module
+
+print(math.e)
+print(Counter("abracadabra").most_common(1))
+```
+
+```text
+2.718281828459045
+[('a', 5)]
+```
+
+Inside a package, submodules import each other **relative** to the package:
+`from .models import User` works in `app/routes/users.py`; bare `import models` does not.
+And every runnable file gets the classic guard at the bottom:
+
+```python
+def main():
+    print("only runs when executed directly")
+
+if __name__ == "__main__":   # not true when this module is imported
+    main()
+
+print(f"this module's name right now: {__name__}")
+```
+
+```text
+only runs when executed directly
+this module's name right now: __main__
+```
+
+(A playground counts as "executed directly" — that's why `main()` ran. When this file
+is *imported* by another module, `__name__` is the module's name and the guard is false.)
+
+A typical FastAPI project looks like this — learn the shape, fill in the parts over the week:
+
+```text
+myapi/
+  pyproject.toml          # dependencies, tool config (ruff, mypy)
+  uv.lock
+  .env                    # secrets — NEVER commit this
+  app/
+    __init__.py
+    main.py               # app = FastAPI(), entry point
+    config.py             # settings loaded from env / toml
+    db.py                 # database session, models
+    models.py             # Pydantic request/response schemas
+    routes/
+      __init__.py
+      users.py            # @router.get("/users") etc.
+  tests/
+    test_users.py
+```
+
+## Style & tooling
+
+Python style is settled: **PEP 8**, auto-formatted. You will not be judged for style if
+your code is formatter-clean. The toolchain in 2026:
+
+- **`ruff`** — linter *and* formatter in one Rust binary, replaces flake8+isort+black for
+  most projects.
+- **`mypy`** — static type checker; type hints (topic later) become a real safety net.
+
+```bash
+uvx ruff check .         # lint
+uvx ruff format .        # format (no arguments, no config needed to start)
+uvx mypy app             # type check
+```
+
+Naming conventions you'll see enforced everywhere:
+
+| What | Style | Example |
+|---|---|---|
+| modules, functions, variables | `snake_case` | `get_user_by_id`, `max_retries` |
+| classes | `CamelCase` | `UserService`, `APIError` |
+| constants | `UPPER_SNAKE` | `DEFAULT_TIMEOUT` |
+| "private" (internal) names | `_leading_underscore` | `_build_query` |
+| dunder (double-underscore) methods | `__name__` | `__init__`, `__repr__` |
+
+<blockquote><span class="bq-label">Best practice</span>
+Line length defaults to **88** (ruff/black). Don't reformat other people's code beyond
+what the formatter does. Set up `ruff` + `mypy` in `pyproject.toml` on day one and run
+them in CI — catching `Userid` vs `user_id` and untyped endpoints at review time saves
+the week.
+</blockquote>
+
+%%MORE%%
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v314.0.5/full/pyodide.js"></script>
+<script>
+"use strict";
+
+/* ================= config ================= */
+const PYODIDE_VERSION = "314.0.5";
+// Official "full" dist: core engine + stdlib + loadPackage() wheels, all
+// integrity-checked. (The npm mirror on jsdelivr omits the .whl files, so
+// loadPackage() would 404 there.)
+const PYODIDE_URL = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
+const LS_PREFIX = "pbe-code:";
+
+/* ================= 1. extract code fences ================= */
+// Splits the markdown into [text, fence, text, fence, ...] segments.
+function splitFences(md) {
+  const re = /```([^\n]*)\n([\s\S]*?)```/g;
+  const segs = [];
+  let last = 0, m, i = 0;
+  while ((m = re.exec(md))) {
+    if (m.index > last) segs.push({ type: "text", body: md.slice(last, m.index) });
+    const info = m[1].trim();
+    const words = info.split(/\s+/);
+    const lang = (words[0] || "").toLowerCase();
+    const attrs = {};
+    for (let k = 1; k < words.length; k++) {
+      const [key, val] = words[k].split("=");
+      attrs[key] = val || true;
+    }
+    segs.push({ type: "fence", lang, attrs, body: m[2].replace(/\n$/, "") });
+    last = re.lastIndex;
+    i++;
+  }
+  if (last < md.length) segs.push({ type: "text", body: md.slice(last) });
+  return segs;
+}
+
+/* ================= 2. render each segment ================= */
+let pgCounter = 0;
+const playgrounds = []; // { id, el, original, run, ... }
+
+function esc(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function staticBlock(segs, seg) {
+  const label =
+    seg.attrs.title ||
+    ({ bash: "terminal", sh: "terminal", shell: "terminal", json: "json",
+       http: "http", text: "output", toml: "toml", yaml: "yaml" }[seg.lang]) ||
+    seg.lang || "code";
+  const langClass =
+    ({ bash: "bash", sh: "bash", shell: "bash", http: "http", text: "text",
+       py: "python", python: "python", toml: "ini", yaml: "yaml" }[seg.lang]) || seg.lang;
+  return (
+    `<div class="codeblock${label === "output" ? " output" : ""}">` +
+    `<div class="cb-bar"><span class="dot-row"><i></i><i></i><i></i></span>` +
+    `<span>${esc(label)}</span>` +
+    (seg.attrs["no-run"] ? ` <span class="badge ref">reference</span>` : "") +
+    `</div>` +
+    `<pre><code class="language-${esc(langClass)}">${esc(seg.body)}</code></pre></div>`
+  );
+}
+
+function playgroundBlock(seg) {
+  const id = "pg-" + pgCounter++;
+  const title = seg.attrs.title || "example.py";
+  return (
+    `<div class="pg" id="${id}">` +
+    `<div class="pg-bar">` +
+    `<span class="pg-title">🐍 ${esc(title)}</span>` +
+    `<span class="pg-status"></span>` +
+    `<button class="pg-reset" title="Restore original code">↺ Reset</button>` +
+    `<button class="pg-run">▶ Run</button>` +
+    `</div>` +
+    `<textarea class="pg-code" spellcheck="false" wrap="off" aria-label="Editable Python code"></textarea>` +
+    `<pre class="pg-out empty" hidden></pre>` +
+    `</div>`
+  );
+}
+
+/* ================= 3. build page ================= */
+const rawSource = document.getElementById("source").textContent.replace(/\n?%%MORE%%\s*$/, "");
+const segs = splitFences(rawSource);
+const pgPending = []; // runnable code, stashed in document order
+let html = "";
+for (const seg of segs) {
+  if (seg.type === "text") {
+    html += marked.parse(seg.body, { gfm: true, breaks: false });
+  } else if (seg.lang === "python" && !seg.attrs["no-run"]) {
+    html += playgroundBlock(seg);
+    pgPending.push(seg.body);
+  } else {
+    html += staticBlock(null, seg);
+  }
+}
+document.getElementById("content").innerHTML = html;
+
+/* ================= 4. headings, anchors, TOC ================= */
+(function buildToc() {
+  const content = document.getElementById("content");
+  const toc = document.getElementById("toc");
+  let group = null, num = 0;
+  const slugCache = {};
+  function slug(t) {
+    let s = t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    if (slugCache[s] != null) { slugCache[s]++; s = s + "-" + slugCache[s]; }
+    else slugCache[s] = 1;
+    return s;
+  }
+  content.querySelectorAll("h1, h2").forEach(h => {
+    const id = slug(h.textContent);
+    h.id = id;
+    if (h.tagName === "H1") {
+      group = document.createElement("div");
+      group.className = "nav-group";
+      const gh = document.createElement("h3");
+      gh.textContent = h.textContent;
+      group.appendChild(gh);
+      toc.appendChild(group);
+    } else {
+      num++;
+      const a = document.createElement("a");
+      a.href = "#" + id;
+      a.dataset.title = h.textContent.toLowerCase();
+      a.textContent = h.textContent;
+      h.insertAdjacentHTML("afterbegin", `<a class="anchor" href="#${id}" aria-hidden="true">#</a>`);
+      (group || (group = document.createElement("div"), group.className = "nav-group", toc.appendChild(group)))
+        .appendChild(a);
+    }
+  });
+  document.getElementById("search").addEventListener("input", e => {
+    const q = e.target.value.trim().toLowerCase();
+    document.querySelectorAll("#toc .nav-group").forEach(g => {
+      let any = false;
+      g.querySelectorAll("a").forEach(a => {
+        const show = !q || a.dataset.title.includes(q);
+        a.style.display = show ? "" : "none";
+        if (show) any = true;
+      });
+      g.style.display = any ? "" : "none";
+    });
+  });
+  // scrollspy
+  const links = [...document.querySelectorAll("#toc a")];
+  const byId = Object.fromEntries(links.map(a => [a.getAttribute("href").slice(1), a]));
+  const obs = new IntersectionObserver(entries => {
+    for (const en of entries) {
+      if (en.isIntersecting && byId[en.target.id]) {
+        links.forEach(a => a.classList.remove("active"));
+        byId[en.target.id].classList.add("active");
+      }
+    }
+  }, { rootMargin: "-10% 0px -80% 0px" });
+  document.querySelectorAll("h1, h2").forEach(h => obs.observe(h));
+})();
+
+/* ================= 5. playgrounds ================= */
+(function initPlaygrounds() {
+  const nodes = [...document.querySelectorAll(".pg")];
+  // code was stashed in order during the html build
+  nodes.forEach((el, i) => {
+    const original = pgPending[i];
+    const ta = el.querySelector("textarea");
+    const out = el.querySelector(".pg-out");
+    const status = el.querySelector(".pg-status");
+    const btnRun = el.querySelector(".pg-run");
+    const btnReset = el.querySelector(".pg-reset");
+    ta.value = restoreEdit(el.id, original) ?? original;
+
+    function autosize() {
+      ta.style.height = "auto";
+      ta.style.height = ta.scrollHeight + 2 + "px";
+    }
+    autosize();
+
+    function save() {
+      const v = ta.value;
+      if (v === original) localStorage.removeItem(LS_PREFIX + el.id);
+      else localStorage.setItem(LS_PREFIX + el.id, v);
+    }
+    let saveTimer;
+    ta.addEventListener("input", () => {
+      autosize();
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(save, 300);
+    });
+    ta.addEventListener("keydown", e => {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const s = ta.selectionStart, epos = ta.selectionEnd;
+        const v = ta.value;
+        if (e.shiftKey) {
+          const ls = v.lastIndexOf("\n", s - 1) + 1;
+          const stripped = v.slice(ls).replace(/^ {1,4}/, "    ");
+          ta.value = v.slice(0, ls) + stripped;
+        } else {
+          ta.value = v.slice(0, s) + "    " + v.slice(epos);
+        }
+        ta.selectionStart = ta.selectionEnd = s + (e.shiftKey ? -4 : 4);
+        autosize();
+      } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        btnRun.click();
+      }
+    });
+    btnReset.addEventListener("click", () => {
+      ta.value = original;
+      localStorage.removeItem(LS_PREFIX + el.id);
+      autosize();
+      out.hidden = true;
+      out.className = "pg-out empty";
+      out.textContent = "output appears here after you run";
+      status.textContent = "reset";
+    });
+    btnRun.addEventListener("click", () => run(el, ta, out, status, btnRun));
+    // initial look
+    out.textContent = "output appears here after you run — ⌘/Ctrl+Enter also runs";
+  });
+
+  function restoreEdit(id, original) {
+    const v = localStorage.getItem(LS_PREFIX + id);
+    return v !== null && v !== original ? v : null;
+  }
+})();
+
+/* ================= 6. the Python engine ================= */
+let pyodidePromise = null;
+let busy = Promise.resolve(); // serialize runs
+
+const statusEl = document.getElementById("py-status");
+const statusText = document.getElementById("py-status-text");
+function setStatus(state, text) {
+  statusEl.className = state;
+  statusText.textContent = text;
+}
+
+function getPyodide() {
+  if (!pyodidePromise) {
+    setStatus("loading", "loading CPython 3.14 (one-time ~10 MB)…");
+    pyodidePromise = loadPyodide({ indexURL: PYODIDE_URL })
+      .then(py => {
+        setStatus("ready", "Python " + py.runPython("import sys; sys.version.split()[0]") + " ready");
+        return py;
+      })
+      .catch(err => {
+        pyodidePromise = null; // allow retry
+        setStatus("error", "failed to load Python (offline?)");
+        throw new Error("Could not load Pyodide: " + err);
+      });
+  }
+  return pyodidePromise;
+}
+
+// Wrap user code so top-level `await` works, like a REPL.
+function isAsyncCode(code) {
+  return /(^|\n)\s*(await\s|async\s+(for|with)\b)/.test(code) && !code.includes("asyncio.run(");
+}
+function wrapAsync(code) {
+  const indented = code
+    .split("\n")
+    .map(l => (l.length ? "    " + l : l))
+    .join("\n");
+  return "import asyncio\n\nasync def __pbe_main__():\n" + indented +
+         "\n\nasyncio.run(__pbe_main__())\n";
+}
+
+function run(pgEl, ta, out, status, btnRun) {
+  const prev = busy;
+  let release;
+  busy = new Promise(r => (release = r));
+  prev.then(() => doRun()).finally(release);
+
+  function doRun() {
+    btnRun.disabled = true;
+    status.textContent = "running…";
+    const started = performance.now();
+    getPyodide()
+      .then(py => {
+        const lines = [];
+        py.setStdout({ batched: t => lines.push(t) });
+        py.setStderr({ batched: t => lines.push(t) });
+        const code = isAsyncCode(ta.value) ? wrapAsync(ta.value) : ta.value;
+        // a few stdlib modules need data files that don't exist in the browser;
+        // load the matching Pyodide package when the code uses one (cached after
+        // the first load). Plain Python gets these from the OS.
+        const pkgs = [];
+        if (/(^|\n)\s*(?:import|from)\s+zoneinfo\b/.test(ta.value)) pkgs.push("tzdata");
+        return (pkgs.length
+          ? py.loadPackage(pkgs, msg => (status.textContent = msg))
+          : Promise.resolve())
+          .then(() => py.runPythonAsync(code))
+          .then(res => ({ res, lines }));
+      })
+      .then(({ res, lines }) => {
+        const dt = (performance.now() - started).toFixed(0);
+        showResult(lines, res, null);
+        status.textContent = "✓ ran in " + dt + " ms";
+      })
+      .catch(err => {
+        showResult([], null, String(err.message || err));
+        status.textContent = "✗ error";
+      })
+      .finally(() => (btnRun.disabled = false));
+
+    function showResult(lines, res, errMsg) {
+      out.hidden = false;
+      const parts = [];
+      if (lines.length) parts.push(lines.join("\n"));
+      if (res !== undefined && res !== null) parts.push("↩ " + String(res));
+      if (errMsg) {
+        out.className = "pg-out err";
+        parts.push(errMsg);
+      } else if (!parts.length) {
+        out.className = "pg-out empty";
+        out.textContent = "✓ ran — (no output; use print() to see values)";
+        return;
+      }
+      out.className = "pg-out" + (errMsg ? " err" : "");
+      out.textContent = parts.join("\n");
+    }
+  }
+}
+</script>
+</body>
+</html>
