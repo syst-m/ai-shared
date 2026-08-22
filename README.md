@@ -21,6 +21,17 @@ Interactive FIFA World Cup 2026 bracket tracker — self-contained HTML with tab
 
 - [Live Demo](https://syst-m.github.io/ai-shared/joe/worldcup2026.html) *(after enabling GitHub Pages)*
 
+### 📦 MCP Inventory API (`examples/mcp-inventory-api/`)
+
+Example database-backed REST API for inventorying MCP metadata — audiences, claims, and scopes. FastAPI + SQLAlchemy 2.0 + Alembic + PostgreSQL, with a test suite that runs against a real PostgreSQL via testcontainers (HTTP layer → DB, no mocks), Dockerfile, and docker-compose for a deployable stack.
+
+| File | Description |
+|------|-------------|
+| [`README.md`](examples/mcp-inventory-api/README.md) | Data model, API reference, quick start, migration & test guide |
+| `src/mcp_inventory/` | App: FastAPI factory, CRUD routers, SQLAlchemy models, Pydantic schemas |
+| `alembic/` | Migration chain (applied by the Docker entrypoint and the test suite) |
+| `tests/` | testcontainers-based integration tests |
+
 ## Setup & Publishing
 
 ### GitHub Pages
