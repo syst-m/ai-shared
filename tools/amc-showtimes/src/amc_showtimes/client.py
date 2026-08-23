@@ -189,16 +189,32 @@ class AMCClient:
         self,
         page: int = 1,
         size: int = 50,
-        search: str | None = None,
+        name: str | None = "*",
         timeout: float = 5.0,
     ) -> dict[str, Any]:
-        """List/search movies."""
+        """List/search movies.
+
+        The AMC API requires a search criterion (``name``); passing nothing
+        returns 400 "Search criteria required". Use ``name="*"`` for a
+        wildcard catalog listing and ``movie-status=currently-playing``
+        (sent by default) to restrict results to the current slate.
+
+        Args:
+            page: Page number (1-based).
+            size: Results per page (max 100).
+            name: Search term for movie name. "*" for a wildcard listing.
+            timeout: Per-request timeout in seconds.
+
+        Returns:
+            Parsed JSON response dict with HAL-style envelope.
+        """
         params: dict[str, Any] = {
             "page-number": page,
             "page-size": size,
+            "movie-status": "currently-playing",
         }
-        if search:
-            params["search"] = search
+        if name is not None:
+            params["name"] = name
         return self.get("/v2/movies", params=params, timeout=timeout)
 
     def get_theater(self, theater_number: int, timeout: float = 5.0) -> dict[str, Any]:
@@ -222,15 +238,191 @@ class AMCClient:
         """Get showtimes for a theater, optionally filtered by date.
 
         Args:
-            theater_number: AMC theater number (e.g. 8, 17).
+            theater_number: AMC theater number (e.g. 2325, 17).
             date: Date string in YYYY-MM-DD format. Omit for all showtimes.
             timeout: Request timeout in seconds.
+
+        Returns:
+            Parsed JSON response dict (first page only; use
+            :meth:`get_all_showtimes` for the complete list).
         """
         if date:
             path = f"/v2/theatres/{theater_number}/showtimes/{date}"
         else:
             path = f"/v2/theatres/{theater_number}/showtimes"
         return self.get(path, timeout=timeout)
+
+    def get_all_showtimes(
+        self,
+        theater_number: int,
+        date: str | None = None,
+        timeout: float = 8.0,
+    ) -> dict[str, Any]:
+        """Get ALL showtimes for a theater by following _links.next pagination.
+
+        The AMC showtimes API returns ``_links.next`` as an ABSOLUTE URL
+        (e.g. https://api.amctheatres.com/v2/theatres/2325/showtimes/08-23-2026
+        ?page-number=2&page-size=10). This method fetches every page.
+
+        Args:
+            theater_number: AMC theater number.
+            date: Date string in YYYY-MM-DD format.
+            timeout: Per-request timeout in seconds.
+
+        Returns:
+            Parsed JSON response dict with ALL showtimes collected under
+            ``_embedded.showtimes`` and ``totalElements`` set to the count.
+        """
+        first_page = self.get_showtimes(theater_number, date, timeout=timeout)
+        items = self._extract_collection(first_page)
+
+        next_url = self._get_next_url(first_page)
+        while next_url:
+            response = self._request_absolute(next_url, timeout=timeout)
+            items.extend(self._extract_collection(response))
+            next_url = self._get_next_url(response)
+
+        result = dict(first_page)
+        result["_embedded"] = {"showtimes": items}
+        result["totalElements"] = len(items)
+        return result
+
+    def get_all_movies(
+        self,
+        name: str | None = "*",
+        page_size: int = 100,
+        timeout: float = 5.0,
+    ) -> dict[str, Any]:
+        """Get ALL movies by following _links.next pagination.
+
+        Args:
+            name: Search term. "*" for a wildcard listing.
+            page_size: Results per page (max 100).
+            timeout: Per-request timeout in seconds.
+
+        Returns:
+            Parsed JSON response dict with ALL movies collected under
+            ``_embedded.movies`` and ``totalElements`` set to the count.
+        """
+        first_page = self.list_movies(name=name, size=page_size, timeout=timeout)
+        items = self._extract_collection(first_page)
+
+        next_url = self._get_next_url(first_page)
+        while next_url:
+            response = self._request_absolute(next_url, timeout=timeout)
+            items.extend(self._extract_collection(response))
+            next_url = self._get_next_url(response)
+
+        result = dict(first_page)
+        result["_embedded"] = {"movies": items}
+        result["totalElements"] = len(items)
+        return result
+
+    # ------------------------------------------------------------------ #
+    #  Internal helpers                                                   #
+    # ------------------------------------------------------------------ #
+
+    def _extract_collection(self, data: dict[str, Any]) -> list[dict[str, Any]]:
+        """Extract the main collection from a HAL-style response."""
+        embedded = data.get("_embedded", {}) or {}
+        for key in ("showtimes", "movies", "theatres", "values"):
+            collection = embedded.get(key, [])
+            if collection:
+                return collection
+        # Fallback: top-level list
+        for key in ("showtimes", "movies", "theatres", "values"):
+            if isinstance(data.get(key), list):
+                return data[key]
+        return []
+
+    def _get_next_url(self, data: dict[str, Any]) -> str | None:
+        """Extract the absolute URL from _links.next, if present."""
+        links = data.get("_links", {}) or {}
+        next_link = links.get("next")
+        if isinstance(next_link, dict):
+            href = next_link.get("href", "")
+            if href:
+                return href
+        return None
+
+    def _request_absolute(
+        self,
+        url: str,
+        timeout: float | None = None,
+    ) -> dict[str, Any]:
+        """GET an absolute URL (pagination links) with the same retry policy."""
+        effective_timeout = timeout or self.timeout
+        last_error: Exception | None = None
+
+        for attempt in range(self.max_retries + 1):
+            try:
+                response = requests.get(
+                    url,
+                    headers=self._headers,
+                    timeout=effective_timeout,
+                )
+
+                if response.status_code == 429:
+                    retry_after = float(response.headers.get("Retry-After", 1))
+                    wait = retry_after + _jitter(retry_after)
+                    logger.warning(
+                        "Rate limited (429); backing off %.1fs [attempt %d/%d]",
+                        wait, attempt + 1, self.max_retries + 1,
+                    )
+                    time.sleep(wait)
+                    continue
+
+                if response.status_code >= 500:
+                    last_error = AMCClientError(
+                        f"Server error {response.status_code}",
+                        status_code=response.status_code,
+                    )
+                    wait = _backoff(attempt)
+                    logger.warning(
+                        "Server error %d; retrying in %.1fs [attempt %d/%d]",
+                        response.status_code, wait,
+                        attempt + 1, self.max_retries + 1,
+                    )
+                    time.sleep(wait)
+                    continue
+
+                if response.status_code == 401:
+                    raise AMCClientError(
+                        "Authentication failed. Check your API key.",
+                        status_code=401,
+                    )
+
+                if response.status_code >= 400:
+                    body = _safe_json(response)
+                    raise AMCClientError(
+                        f"API error {response.status_code}: {_error_detail(body)}",
+                        status_code=response.status_code,
+                        body=body,
+                    )
+
+                return response.json() if response.content else {}
+
+            except RequestsTimeout:
+                last_error = AMCClientError(
+                    f"Request timed out after {effective_timeout}s",
+                    timeout=True,
+                )
+                logger.warning(
+                    "Timeout; retrying [attempt %d/%d]",
+                    attempt + 1, self.max_retries + 1,
+                )
+                time.sleep(_backoff(attempt))
+            except RequestsConnectionError as exc:
+                last_error = AMCClientError(
+                    f"Connection error: {exc}",
+                )
+                logger.warning(
+                    "Connection error; retrying [attempt %d/%d]",
+                    attempt + 1, self.max_retries + 1,
+                )
+                time.sleep(_backoff(attempt))
+
+        raise last_error or AMCClientError("Max retries exceeded")
 
 
 # ------------------------------------------------------------------ #

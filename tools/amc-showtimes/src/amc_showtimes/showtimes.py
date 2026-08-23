@@ -20,7 +20,10 @@ def get_showtimes(
     theater_number: int,
     date: str | None = None,
 ) -> list[Showtime]:
-    """Fetch showtimes for a theater on a given date.
+    """Fetch ALL showtimes for a theater on a given date.
+
+    Follows ``_links.next`` pagination (absolute URLs) until exhausted,
+    then sorts by local time.
 
     Args:
         client: Configured AMCClient instance.
@@ -28,11 +31,11 @@ def get_showtimes(
         date: Date in YYYY-MM-DD format. None for all upcoming showtimes.
 
     Returns:
-        List of parsed Showtime objects.
+        Sorted list of parsed Showtime objects.
     """
     try:
-        data = client.get_showtimes(theater_number, date=date)
-        return _parse_showtimes(data)
+        data = client.get_all_showtimes(theater_number, date=date)
+        return _parse_and_sort_showtimes(data)
     except AMCClientError as exc:
         logger.warning("Failed to fetch showtimes: %s", exc)
         return []
@@ -87,19 +90,8 @@ def filter_after_time(
 
 
 def _parse_showtimes(data: dict[str, Any]) -> list[Showtime]:
-    """Parse the raw API response into Showtime objects."""
-    items = []
-    # Handle both top-level showtime lists and embedded structures
-    for key in ("showtimes", "values"):
-        collection = (data.get("_embedded", {}) or {}).get(key, [])
-        if not collection:
-            collection = data.get(key, [])
-        if collection:
-            items.extend(collection)
-
-    # If we still have nothing, maybe the response is a flat list at root
-    if not items and isinstance(data.get("values"), list):
-        items = data["values"]
+    """Parse the raw API response into Showtime objects (unsorted)."""
+    items = _extract_collection(data)
 
     parsed: list[Showtime] = []
     for raw in items:
@@ -108,6 +100,34 @@ def _parse_showtimes(data: dict[str, Any]) -> list[Showtime]:
         except (KeyError, ValueError) as exc:
             logger.debug("Skipping unparseable showtime: %s", exc)
     return parsed
+
+
+def _parse_and_sort_showtimes(data: dict[str, Any]) -> list[Showtime]:
+    """Parse the raw API response into sorted Showtime objects."""
+    parsed = _parse_showtimes(data)
+
+    # Sort by local datetime, then by movie name as tiebreaker.
+    # strip tzinfo so naive (live) and aware (mock) datetimes never mix
+    parsed.sort(
+        key=lambda st: (
+            st.showDateTimeLocal.replace(tzinfo=None),
+            st.movieName,
+        )
+    )
+    return parsed
+
+
+def _extract_collection(data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Extract the main collection from a HAL-style response."""
+    embedded = data.get("_embedded", {}) or {}
+    for key in ("showtimes", "movies", "theatres", "values"):
+        collection = embedded.get(key, [])
+        if collection:
+            return collection
+    for key in ("showtimes", "movies", "theatres", "values"):
+        if isinstance(data.get(key), list):
+            return data[key]
+    return []
 
 
 def _parse_showtime(data: dict[str, Any]) -> Showtime:
@@ -122,11 +142,16 @@ def _parse_showtime(data: dict[str, Any]) -> Showtime:
 
     prices = []
     for p in data.get("ticketPrices") or []:
+        # Live API uses {price, type, tax}; older/test shape uses
+        # {priceTypeCode, retailPrice, promotionalDiscount, salePrice}.
+        price_type = p.get("priceTypeCode") or p.get("type", "")
+        retail = float(p.get("retailPrice", p.get("price", 0)) or 0)
+        promo = float(p.get("promotionalDiscount", 0) or 0)
         prices.append({
-            "priceTypeCode": p.get("priceTypeCode", ""),
-            "retailPrice": float(p.get("retailPrice", 0) or 0),
-            "promotionalDiscount": float(p.get("promotionalDiscount", 0) or 0),
-            "salePrice": float(p.get("salePrice", 0) or 0),
+            "priceTypeCode": price_type,
+            "retailPrice": retail,
+            "promotionalDiscount": promo,
+            "salePrice": float(p.get("salePrice", retail - promo) or 0),
         })
 
     # Handle datetime fields — they may be strings or already parsed
