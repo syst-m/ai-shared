@@ -28,7 +28,7 @@ PYTHONPATH=src python3 -m amc_showtimes.cli --help
 Place your AMC API key (UUID format) at `~/.openclaw/.amc-api-key`:
 
 ```bash
-echo "REDACTED-AMC-API-KEY" > ~/.openclaw/.amc-api-key
+echo "<AMC_VENDOR_KEY>" > ~/.openclaw/.amc-api-key
 chmod 600 ~/.openclaw/.amc-api-key
 ```
 
