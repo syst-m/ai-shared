@@ -32,6 +32,10 @@ Example database-backed REST API for inventorying MCP metadata — audiences, cl
 | `alembic/` | Migration chain (applied by the Docker entrypoint and the test suite) |
 | `tests/` | testcontainers-based integration tests |
 
+### 🐍 Python by Example (`learning/python-by-example/`)
+
+A zero-to-100 Python refresher in the [Go by Example](https://gobyexample.com/) style, for experienced programmers getting back into Python — backend/web-API weighted. Single self-contained HTML file with **57 editable playgrounds** running real CPython 3.14 in the browser via Pyodide (CDN, ~10 MB one-time). Double-click [`python-by-example.html`](learning/python-by-example/python-by-example.html) to open — no server needed.
+
 ## Setup & Publishing
 
 ### GitHub Pages
