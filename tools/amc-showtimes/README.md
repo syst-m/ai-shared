@@ -2,6 +2,10 @@
 
 A lightweight Python CLI tool for querying AMC Theatres showtimes, filtering by premium formats (IMAX, Dolby Cinema, 4DX, PRIME), and enriching movies with IMDB/Rotten Tomatoes ratings.
 
+## Agent Skill
+
+AI agents and assistants: see [SKILL.md](SKILL.md) for when to use this CLI, exact commands, theater aliases, known-theater caveats, and troubleshooting.
+
 ## Features
 
 - **Theater lookup** — Fast alias resolution for known theaters (AMC Metreon 15, AMC Mercado 6)
