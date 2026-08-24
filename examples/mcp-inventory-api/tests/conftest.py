@@ -1,7 +1,9 @@
 """Test fixtures.
 
-Every test runs against a **real PostgreSQL** spun up by testcontainers:
-the session boots one container, applies the Alembic migrations to it, and
+Every test runs against a **real PostgreSQL** — by default one spun up by
+testcontainers, or an existing database named by `MCPINVENTORY_TEST_DATABASE_URL`
+(for Docker-less environments). The session applies the Alembic migrations to
+it, and
 each test gets an isolated (truncated) database plus an HTTP client that
 exercises the full app. Assertions go HTTP -> response AND HTTP -> row.
 """

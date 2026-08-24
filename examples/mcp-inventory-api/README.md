@@ -109,7 +109,8 @@ That database is **truncated before every test** — point the variable at a
 disposable one, never a shared database.
 
 In either mode the suite applies the Alembic chain to the database
-(`test_migrations` asserts the head revision is recorded), then exercises every
+(`test_alembic_head_is_applied` asserts the head revision is recorded), then
+exercises every
 endpoint through the HTTP layer — with assertions on **both** the JSON
 response and the rows actually stored in PostgreSQL (including cascade deletes,
 unique violations, FK 404s, and tz-aware timestamps). Tables are truncated
@@ -152,7 +153,8 @@ migrations, and tests use Postgres-specific types (e.g. `postgresql.UUID`).
   and CRUD module (misses are only the `__main__` entry point and the cached-settings
   loaders).
 - **Migrations** — revision `0001` applies cleanly to a fresh container
-  (`alembic upgrade head`); `test_migrations` asserts the head revision is recorded.
+  (`alembic upgrade head`); `test_alembic_head_is_applied` asserts the head
+  revision is recorded.
 - **Docker deploy** — `docker compose up --build`: image builds, both containers
   reach `(healthy)`, the entrypoint migration runs on boot, and a full curl smoke
   pass succeeds (`/healthz` 200 → audience/scope/claim 201 → audience-filter 200 →
