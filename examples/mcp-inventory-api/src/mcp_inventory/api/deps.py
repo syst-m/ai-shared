@@ -4,6 +4,7 @@ import uuid
 from collections.abc import Iterator
 
 from fastapi import HTTPException, Request, status
+from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -29,3 +30,18 @@ def is_fk_violation(exc: IntegrityError) -> bool:
     orig = getattr(exc, "orig", None)
     code = getattr(orig, "sqlstate", None) or getattr(orig, "pgcode", None)
     return code == "23503"
+
+
+def reject_null_update_fields(payload: BaseModel) -> None:
+    """Raise 422 if an explicitly provided field is ``null``.
+
+    All updatable columns are NOT NULL, so a ``null`` value can never be stored;
+    without this check it would surface later as a NOT NULL ``IntegrityError``
+    misreported by the router as a 409 duplicate.
+    """
+    null_fields = sorted(f for f in payload.model_fields_set if getattr(payload, f) is None)
+    if null_fields:
+        raise HTTPException(
+            status_code=422,  # literal: HTTP_422_* constant names differ across FastAPI versions
+            detail=f"cannot be null: {', '.join(null_fields)}",
+        )

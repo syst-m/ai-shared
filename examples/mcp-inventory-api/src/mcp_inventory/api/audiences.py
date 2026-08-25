@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import crud, models, schemas
-from .deps import get_db
+from .deps import get_db, reject_null_update_fields
 
 router = APIRouter(prefix="/audiences", tags=["audiences"])
 
@@ -46,6 +46,7 @@ def update_audience(audience_id: uuid.UUID, payload: schemas.AudienceUpdate, db:
     audience = crud.get_audience_by_id(db, audience_id)
     if audience is None:
         raise _not_found(audience_id)
+    reject_null_update_fields(payload)
     try:
         return crud.update_audience(db, audience, payload)
     except IntegrityError as exc:

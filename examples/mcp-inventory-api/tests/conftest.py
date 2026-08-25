@@ -1,11 +1,14 @@
 """Test fixtures.
 
-Every test runs against a **real PostgreSQL** spun up by testcontainers:
-the session boots one container, applies the Alembic migrations to it, and
+Every test runs against a **real PostgreSQL** — by default one spun up by
+testcontainers, or an existing database named by `MCPINVENTORY_TEST_DATABASE_URL`
+(for Docker-less environments). The session applies the Alembic migrations to
+it, and
 each test gets an isolated (truncated) database plus an HTTP client that
 exercises the full app. Assertions go HTTP -> response AND HTTP -> row.
 """
 
+import os
 from pathlib import Path
 from collections.abc import Iterator
 
@@ -26,7 +29,21 @@ DB_NAME = "mcp_inventory_test"
 
 @pytest.fixture(scope="session")
 def db_url() -> Iterator[str]:
-    """Boot a real PostgreSQL container for the whole test session."""
+    """Yield the PostgreSQL URL for the whole test session.
+
+    By default a real `postgres:16-alpine` container is booted via
+    testcontainers. If `MCPINVENTORY_TEST_DATABASE_URL` is set, that database
+    is used instead (e.g. a locally installed PostgreSQL) — for environments
+    without Docker. The suite still applies the Alembic chain to it.
+
+    Warning: point this at a **disposable** database — the suite truncates the
+    inventory tables before every test.
+    """
+    external = os.environ.get("MCPINVENTORY_TEST_DATABASE_URL")
+    if external:
+        yield external
+        return
+
     with PostgresContainer(
         image=POSTGRES_IMAGE,
         username="mcp",
@@ -46,7 +63,14 @@ def migrated_engine(db_url: str):
     cfg = Config(str(PROJECT_ROOT / "alembic.ini"))
     cfg.set_main_option("script_location", str(PROJECT_ROOT / "alembic"))
     cfg.set_main_option("sqlalchemy.url", db_url)
-    command.upgrade(cfg, "head")
+    # env.py gives the MCPINVENTORY_DATABASE_URL env var precedence over the
+    # ini url; hide it while upgrading so migrations always hit db_url.
+    saved = os.environ.pop("MCPINVENTORY_DATABASE_URL", None)
+    try:
+        command.upgrade(cfg, "head")
+    finally:
+        if saved is not None:
+            os.environ["MCPINVENTORY_DATABASE_URL"] = saved
 
     engine = make_engine(db_url)
     yield engine

@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import crud, models, schemas
-from .deps import get_db, is_fk_violation, require_audience
+from .deps import get_db, is_fk_violation, reject_null_update_fields, require_audience
 
 router = APIRouter(prefix="/claims", tags=["claims"])
 
@@ -54,6 +54,7 @@ def update_claim(claim_id: uuid.UUID, payload: schemas.ClaimUpdate, db: Session 
     claim = crud.get_claim(db, claim_id)
     if claim is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"claim {claim_id} not found")
+    reject_null_update_fields(payload)
     try:
         return crud.update_claim(db, claim, payload)
     except IntegrityError as exc:

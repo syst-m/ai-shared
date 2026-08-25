@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import crud, models, schemas
-from .deps import get_db, is_fk_violation, require_audience
+from .deps import get_db, is_fk_violation, reject_null_update_fields, require_audience
 
 router = APIRouter(prefix="/scopes", tags=["scopes"])
 
@@ -54,6 +54,7 @@ def update_scope(scope_id: uuid.UUID, payload: schemas.ScopeUpdate, db: Session 
     scope = crud.get_scope(db, scope_id)
     if scope is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"scope {scope_id} not found")
+    reject_null_update_fields(payload)
     try:
         return crud.update_scope(db, scope, payload)
     except IntegrityError as exc:
