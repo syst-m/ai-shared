@@ -3,6 +3,7 @@
 **Status:** Draft  
 **Author:** AI Agent (on behalf of Frank Ellis)  
 **Date:** 2026-08-11  
+**Revision:** 2026-09-03 (live API audit)  
 **Target Repo:** `syst-m/ai-shared`  
 
 ---
@@ -24,7 +25,30 @@
 9. [Testing Strategy](#9-testing-strategy)
 10. [Implementation Plan](#10-implementation-plan)
 
----
+## Revision History
+
+### 2026-09-03 Revision (Live API Audit)
+
+The AMC API backend was migrated ~2026-08-30. The following deltas apply to this spec:
+
+| Section | Change |
+|---|---|
+| §4.2 | `/v2/locations/name/{name}` and `/v2/locations/state/{state}` now return 404. Use `GET /v2/theatres?name={query}` instead. |
+| §4.2 | Theatre responses no longer contain a `number` field. Use `id` as the primary identifier. |
+| §4.2 | Theatre location object keys changed: `streetAddress` → `addressLine1`, `state` → `state`, `zip` → `postalCode`. No `geo` or `address` objects exist. |
+| §4.3 | The per-theatre showtimes endpoint (`/v2/theatres/{id}/showtimes`) **still works** (contrary to earlier reports). |
+| §4.3 | `/v2/showtimes` (no path) and `/v2/showtimes/views` (no path) return 404. |
+| §4.3 | `/v2/showtimes/{id}` (single showtime) **still works**. |
+| §4.3 | `attribute-operator=and` returns 404; only `or` is supported. |
+| §4.3 | The `theatre-id` query parameter on the current-location view is accepted but **ignored** — filter client-side. |
+| §4.4 | All v3 endpoints (`/v3/seating-layouts/*`, `/v3/orders/*`) return 404. |
+| §5.1 | Movie model: `title` → `name`, `imageUrl` → `media.posterStandard`, `castList` → `starringActors` (string, comma-separated). |
+| §5.2 | Error format: single error object → `errors` array with `id`, `code`, `exceptionMessage` fields. |
+| §5.2 | 401 (bad key) returns HTTP 404 with empty body, not 401. |
+| §7.1 | No rate-limit headers (`X-RateLimit-*`) are returned. |
+| §8 | Seating and order endpoints are unreachable; §8–§10 are deferred. |
+| Appendix A | Updated attribute codes to reflect live observations (added `70MM`, `IMAX70MM`, `AONELIVE`, `DISNEYRWDS`, `THRLSCHLS`; removed `4DX` from showtime-only, added `LASERATAMC`). |
+| Appendix B | No `Retry-After` header observed on 429 responses. |
 
 ## 1. Overview
 
@@ -159,35 +183,63 @@ All AMC API responses use a HAL (Hypertext Application Language) envelope. A typ
 
 | Parameter | Type | Required | Default | Description |
 |---|---|---|---|---|
+| `name` | string | **Yes** | — | Search term. Use `*` for a wildcard catalog listing. |
+| `movie-status` | string | No | `currently-playing` | Filter: `currently-playing`, `upcoming`, `all` |
 | `page-number` | integer | No | 1 | Page of results |
-| `page-size` | integer | No | 10 | Results per page (max 100) |
+| `page-size` | integer | No | 10 | Results per page (max 1000) |
 
-**Response Schema — Movie:**
+> **⚠️ 2026-09-03 update:** The `name` parameter is now **required**. Omitting it returns HTTP 400 with error code 5308 ("Search criteria required").
+
+**Response Schema — Movie (list item):**
 
 ```json
 {
-  "id": 98765,
-  "name": "Movie Title",
-  "slug": "movie-title",
-  "sortName": "Movie Title",
-  "runtime": 132,
-  "mpaaRating": "PG-13",
-  "genre": "Action, Adventure",
-  "tagline": "Coming this summer.",
-  "synopsis": "A brief description...",
+  "id": 76238,
+  "name": "The Odyssey",
+  "sortableName": "Odyssey, The",
+  "starringActors": "Anne Hathaway, Matt Damon, Tom Holland",
+  "directors": "Christopher Nolan",
+  "mpaaRating": "R",
+  "score": 0.15375,
+  "slug": "the-odyssey-76238",
+  "hasScheduledShowtimes": true,
+  "websiteUrl": "https://www.amctheatres.com/movies/the-odyssey-76238",
+  "showtimesUrl": "https://www.amctheatres.com/movies/the-odyssey-76238/showtimes",
+  "availableForAList": true,
+  "preferredMediaType": "Theatrical",
   "attributes": [
-    { "id": 1, "code": "IMAX", "name": "IMAX" },
-    { "id": 2, "code": "DOLBY_CINEMA", "name": "Dolby Cinema" }
+    { "code": "4DX", "name": "4DX at AMC", "description": "4DX" },
+    { "code": "IMAX", "name": "IMAX at AMC", "description": "..." }
   ],
   "media": {
-    "posterImage": "https://...",
-    "heroImage": "https://..."
+    "posterThumbnail": "",
+    "posterStandard": "",
+    "posterLarge": "",
+    "trailerHd": "https://...",
+    "trailerMp4": "https://..."
   },
   "_links": {
-    "self": { "href": "/v2/movies/{movie-id}" }
+    "self": { "href": "https://api.amctheatres.com/v2/movies/76238" }
   }
 }
 ```
+
+**Response Schema — Movie (detail, additional fields):**
+
+Additional fields when fetching a single movie (`GET /v2/movies/{id}`):
+
+| Field | Type | Description |
+|---|---|---|
+| `synopsis` | string | Film synopsis |
+| `runTime` | integer | Duration in minutes |
+| `genre` | string | Genre (uppercase) |
+| `releaseDateUtc` | string (ISO 8601) | Release date |
+| `earliestShowingUtc` | string (ISO 8601) | Earliest showing date |
+| `onlineTicketAvailabilityDateUtc` | string (ISO 8601) | When tickets go on sale |
+| `distributorId` | integer | Distributor ID |
+| `distributorCode` | string | Distributor code |
+| `wwmReleaseNumber` | integer | Internal release number |
+| `vuduUrl` | string | Vudu purchase link |
 
 ### 4.2 Theater Locator
 
@@ -196,36 +248,47 @@ All AMC API responses use a HAL (Hypertext Application Language) envelope. A typ
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/v2/theatres/{theatre-number}` | Get details for a specific theater |
-| `GET` | `/v2/theatres` | List all active theaters |
-| `GET` | `/v2/locations/state/{state-name}` | Theaters by state |
-| `GET` | `/v2/locations/name/{theatre-name}` | Theaters by name (fuzzy match) |
-| `GET` | `/v2/locations/nearby?latitude={lat}&longitude={lon}` | Theaters near coordinates |
+| `GET` | `/v2/theatres` | List all active theaters (paginated) |
+| `GET` | `/v2/theatres/{theatre-id}` | Get details for a specific theater |
+| `GET` | `/v2/theatres?name={query}` | Search theaters by name (substring match, paginated) |
 
 **Response Schema — Theatre:**
 
+> **⚠️ 2026-09-03 update:** The `number` field is no longer present. Use `id` as the primary identifier. Location keys have changed.
+
 ```json
 {
-  "id": 1234,
-  "number": "1234",
-  "name": "AMC City National 10",
-  "slug": "amc-city-national-10-imax-1234",
-  "marketId": 5678,
-  "marketName": "Los Angeles",
-  "address": {
-    "streetAddress": "550 S Hope St",
-    "city": "Los Angeles",
+  "id": 2325,
+  "name": "AMC Metreon 16",
+  "longName": "AMC Metreon 16",
+  "slug": "amc-metreon-16",
+  "brand": "AMC",
+  "ticketable": "AMC",
+  "isClosed": false,
+  "guestServicesPhoneNumber": "4153696207",
+  "utcOffset": "-07:00",
+  "timezone": "PACIFIC TIME",
+  "timezoneAbbreviation": "PDT",
+  "location": {
+    "addressLine1": "135 Fourth St",
+    "addressLine2": "Suite 3000",
+    "city": "SAN FRANCISCO",
+    "postalCode": "94103",
     "state": "CA",
-    "zip": "90071"
+    "stateName": "CALIFORNIA",
+    "country": "United States",
+    "latitude": 37.78409516,
+    "longitude": -122.4036164,
+    "marketName": "San Francisco",
+    "marketId": 105
   },
-  "geo": {
-    "latitude": 34.0485,
-    "longitude": -118.2574
+  "attributes": [
+    { "code": "reservedseating", "name": "Reserved Seating", "description": "..." }
+  ],
+  "media": {
+    "theatreImageStandard": "https://...",
+    "theatreImageLarge": "https://..."
   },
-  "phone": "(213) 555-0100",
-  "hasIMAX": true,
-  "hasDolbyCinema": true,
-  "hasPrime": true,
   "_links": { ... }
 }
 ```
@@ -233,67 +296,116 @@ All AMC API responses use a HAL (Hypertext Application Language) envelope. A typ
 ### 4.3 Showtime Retrieval
 
 **API:** Showtimes API v2  
-**Base Path:** `/v2/showtimes` and `/v2/theatres/{theatre-number}/showtimes`
+**Base Path:** `/v2/theatres/{theatre-id}/showtimes`, `/v2/showtimes/{id}`, and `/v2/showtimes/views/current-location/{date}/{lat}/{lon}`
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/v2/theatres/{theatre-number}/showtimes` | All future showtimes for a theater |
-| `GET` | `/v2/theatres/{theatre-number}/showtimes/{date}` | Showtimes on a specific date |
-| `GET` | `/v2/theatres/{theatre-number}/showtimes/{date}/views/embargoed` | Embargoed showtimes |
-| `GET` | `/v2/theatres/{theatre-number}/movies/{movie-id}/earliest-showtime` | Earliest showing of a movie |
-| `GET` | `/v2/showtimes/{id}` | Showtime by ID |
-| `GET` | `/v2/showtimes/views/current-location/{date}/{latitude}/{longitude}` | Showtimes near location |
+| Method | Endpoint | Description | Status |
+|--------|----------|-------------|--------|
+| `GET` | `/v2/theatres/{theatre-id}/showtimes` | All future showtimes for a theater | ✅ Working |
+| `GET` | `/v2/theatres/{theatre-id}/showtimes/{date}` | Showtimes on a specific date (**MM-DD-YYYY** format) | ✅ Working |
+| `GET` | `/v2/theatres/{theatre-id}/movies/{movie-id}/earliest-showtime` | Earliest showing of a movie | ✅ Working |
+| `GET` | `/v2/showtimes/{id}` | Showtime by ID | ✅ Working |
+| `GET` | `/v2/showtimes/views/current-location/{date}/{lat}/{lon}` | Showtimes near location (**MM-DD-YYYY** date, client-side `theatreId` filtering required) | ✅ Working |
+| `GET` | `/v2/showtimes` | (no path) | ❌ 404 |
+| `GET` | `/v2/showtimes/views` | (no path) | ❌ 404 |
+| `GET` | `/v2/theatres/{theatre-id}/showtimes/{date}/views/embargoed` | Embargoed showtimes | ❌ 404 |
 
-**Query Parameters:**
+**Query Parameters (per-theatre showtimes):**
 
 | Parameter | Type | Description |
 |---|---|---|
 | `movie-id` | integer | Filter to a specific movie |
-| `include-attributes` | string | Comma-delimited attributes to include (e.g., `IMAX,DOLBY_CINEMA`) |
-| `exclude-attributes` | string | Comma-delimited attributes to exclude |
-| `attribute-operator` | string | `and` (all must match) or `or` (any matches) |
+| `include-attributes` | string | Comma-delimited attribute codes to include (e.g., `IMAX`) |
+| `exclude-attributes` | string | Comma-delimited attribute codes to exclude |
+| `attribute-operator` | string | **`or` only** — `and` returns 404 |
 | `page-number` | integer | Page number (default 1) |
-| `page-size` | integer | Results per page (max 100, default 10) |
+| `page-size` | integer | Results per page (max 1000, default 10) |
+
+**Query Parameters (current-location view):**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `movie-id` | integer | Filter to a specific movie |
+| `include-attributes` | string | Include only showtimes with these attributes |
+| `exclude-attributes` | string | Exclude showtimes with these attributes |
+| `attribute-operator` | string | **`or` only** |
+| `page-number` | integer | Page number (default 1) |
+| `page-size` | integer | Results per page (default 10) |
+| `theatre-id` | integer | ⚠️ **Ignored** — does NOT filter server-side |
+
+> **⚠️ 2026-09-03 update:** The `theatre-id` query parameter on the current-location view is accepted but ignored. The endpoint returns showtimes for ALL theatres near the coordinates. Client-side filtering by `theatreId` is required.
 
 **Response Schema — Showtime:**
 
 ```json
 {
-  "id": 12345678,
-  "movieId": 98765,
-  "movieName": "Movie Title",
-  "showDateTimeUtc": "2026-08-15T21:00:00Z",
-  "showDateTimeLocal": "2026-08-15T14:00:00-07:00",
-  "utcOffset": "-07:00",
-  "theatreId": 1234,
-  "auditorium": 3,
-  "layoutId": 99001,
-  "performanceNumber": 556789,
-  "runTime": 132,
-  "mpaaRating": "PG-13",
-  "genre": "Action",
-  "purchaseUrl": "https://www.amctheatres.com/movies/...",
-  "mobilePurchaseUrl": "https://m.amctheatres.com/...",
-  "isAlmostSoldOut": false,
+  "id": 145681347,
+  "internalReleaseNumber": 132975,
+  "performanceNumber": 55713,
+  "movieId": 76238,
+  "movieName": "The Odyssey",
+  "sortableMovieName": "Odyssey, The",
+  "genre": "ACTION",
+  "showDateTimeUtc": "2026-09-03T17:00:00Z",
+  "showDateTimeLocal": "2026-09-03T10:00:00",
+  "sellUntilDateTimeUtc": "2026-09-03T17:30:00Z",
   "isSoldOut": false,
+  "isAlmostSoldOut": true,
   "isCanceled": false,
-  "isPrivateRental": false,
+  "utcOffset": "-07:00",
+  "theatreId": 2325,
+  "auditorium": 16,
+  "layoutId": 126,
+  "layoutVersionNumber": 1,
+  "runTime": 172,
+  "mpaaRating": "R",
+  "premiumFormat": "70mm",
+  "purchaseUrl": "https://www.amctheatres.com/showtimes/all/2026-09-03/metreon/all/145681347",
+  "mobilePurchaseUrl": "https://www.amctheatres.com/showtimes/all/2026-09-03/metreon/all/145681347",
+  "movieUrl": "https://www.amctheatres.com/movies/the-odyssey-76238",
+  "wwmReleaseNumber": 418804,
   "isDiscountMatineePriced": true,
+  "discountMatineeMessage": "UP TO 15% OFF",
+  "visibilityDateTimeUtc": "2026-06-04T15:40:00Z",
+  "isDiscountDaysEligible": false,
+  "hasTrailers": false,
+  "inTheatreTicketingOnly": false,
+  "estimatedFees": [
+    { "cost": 1.50, "tax": 0, "name": "convenience", "quantity": 1 }
+  ],
   "ticketPrices": [
     {
-      "priceType": "Admit",
-      "sku": "ADV-ADMIT",
-      "price": 16.50,
-      "tax": 1.24,
-      "formattedPrice": "$16.50",
-      "formattedTax": "$1.24"
+      "price": 24.79,
+      "type": "ADULT",
+      "sku": "TICKET-RS-145681347-ADULT",
+      "tax": 0.0,
+      "priceCode": "VE",
+      "posType": "ADULT*"
+    },
+    {
+      "price": 22.39,
+      "type": "CHILD",
+      "sku": "TICKET-RS-145681347-CHILD",
+      "agePolicy": "Age 2-12",
+      "tax": 0.0,
+      "priceCode": "VM",
+      "posType": "CHILD*"
     }
   ],
   "attributes": [
-    { "id": 1, "code": "IMAX", "name": "IMAX" },
-    { "id": 2, "code": "LASED", "name": "Digital" }
+    { "code": "70MM", "name": "70mm", "description": "A wide high-resolution film gauge..." },
+    { "code": "IMAX", "name": "IMAX at AMC", "description": "..." },
+    { "code": "RESERVEDSEATING", "name": "Reserved Seating", "description": "..." }
   ],
-  "_links": { ... }
+  "media": {
+    "heroDesktopDynamic": "https://...",
+    "heroMobileDynamic": "https://..."
+  },
+  "languages": {},
+  "_links": {
+    "self": { "href": "https://api.amctheatres.com/v2/showtimes/145681347" },
+    "https://api.amctheatres.com/rels/v2/movie": { "href": "https://api.amctheatres.com/v2/movies/76238" },
+    "https://api.amctheatres.com/rels/v2/theatre": { "href": "https://api.amctheatres.com/v2/theatres/2325" }
+  }
 }
 ```
 
@@ -468,13 +580,15 @@ The integration SHOULD define internal data types that normalize AMC API respons
 ```typescript
 interface Movie {
   id: number;
-  title: string;
+  title: string;            // mapped from API "name"
   slug: string;
-  runtimeMinutes: number;
-  rating: string;        // e.g., "PG-13"
+  runtimeMinutes: number;   // mapped from API "runTime"
+  rating: string;           // mapped from API "mpaaRating"
   genres: string[];
-  formats: string[];     // e.g., ["IMAX", "Dolby Cinema"]
-  posterUrl?: string;
+  formats: string[];        // from API "attributes"
+  posterUrl?: string;       // from API "media.posterStandard"
+  starringActors?: string;  // comma-separated string from API
+  directors?: string;       // string from API
 }
 
 interface Theatre {
@@ -487,40 +601,41 @@ interface Theatre {
   zip: string;
   lat: number;
   lon: number;
-  phone?: string;
-  formats: string[];     // available format codes
+  phone?: string;           // mapped from "guestServicesPhoneNumber"
+  formats: string[];        // from API "attributes"
 }
 
 interface TheatreAddress {
-  streetAddress: string;
+  streetAddress: string;    // mapped from "addressLine1"
   city: string;
   state: string;
-  zip: string;
+  zip: string;              // mapped from "postalCode"
 }
 
 interface Showtime {
   id: number;
   movieId: number;
-  movieTitle: string;
+  movieTitle: string;       // mapped from "movieName"
   theatreId: number;
   auditorium: number;
   performanceNumber: number;
   layoutId: number;
-  startTimeUtc: string;
-  startTimeLocal: string;
-  runtimeMinutes: number;
-  rating: string;
+  startTimeUtc: string;     // ISO 8601
+  startTimeLocal: string;   // ISO 8601 without timezone
+  runtimeMinutes: number;   // mapped from "runTime"
+  rating: string;           // mapped from "mpaaRating"
   isSoldOut: boolean;
   isAlmostSoldOut: boolean;
   isCanceled: boolean;
-  formats: string[];
+  formats: string[];        // from API "attributes"
   ticketPrices: TicketPrice[];
+  premiumFormat?: string;   // e.g., "70mm"
 }
 
 interface Seat {
-  id: string;           // e.g., "J12"
-  row: string;          // e.g., "J"
-  number: string;       // e.g., "12"
+  id: string;
+  row: string;
+  number: string;
   status: 'Available' | 'Reserved' | 'Unavailable' | 'Selected';
 }
 
@@ -537,26 +652,47 @@ interface SeatRow {
 }
 
 interface TicketPrice {
-  type: string;         // e.g., "Admit", "Premium", "Child"
+  type: string;             // e.g., "ADULT", "CHILD", "SENIOR"
   sku: string;
   amount: number;
   tax: number;
-  formattedPrice: string;
+  priceCode: string;
+  posType: string;
 }
 ```
 
 ### 5.2 Error Response
 
-All AMC API error responses follow the HAL-style `ApiError` schema:
+All AMC API error responses follow a HAL-style `errors` array:
 
 ```json
 {
-  "statusCode": 429,    // HTTP status code
-  "message": "Rate limit exceeded",
-  "errorCode": "RATE_LIMIT_EXCEEDED",
-  "moreInfo": "Please reduce request frequency."
+  "errors": [
+    {
+      "id": "5f7db9d6-ed72-4d70-b866-fe9b51336cb2",
+      "code": 5308,
+      "exceptionMessage": "Search criteria required."
+    }
+  ]
 }
 ```
+
+| Field | Type | Description |
+|---|---|---|
+| `errors` | array | Array of error objects |
+| `errors[].id` | string | UUID for the error instance |
+| `errors[].code` | integer | Machine-readable error code |
+| `errors[].exceptionMessage` | string | Human-readable message |
+
+**Common error codes:**
+
+| Code | HTTP Status | Meaning |
+|---|---|---|
+| `1` | 400 | The request requires vendor authentication |
+| `12004` | 404 | No matching Web application endpoint was found |
+| `5308` | 400 | Search criteria required |
+
+> **⚠️ 2026-09-03 update:** An invalid or missing vendor key returns **HTTP 404 with an empty body**, not 401. Detect auth failures by checking if the response body is empty.
 
 ---
 
@@ -617,6 +753,8 @@ Attempt 4: 4000ms ± [0, 500ms] jitter
 
 AMC uses a credit-based rate limiting system where **one credit equals one API call**. The exact per-second or per-minute quota is determined by the vendor agreement level. When the limit is exceeded, the API returns HTTP 429.
 
+> **⚠️ 2026-09-03 update:** The API does **not** return rate-limit headers (`X-RateLimit-*`, `Retry-After`) in normal responses. Rate limit state must be inferred from 429 responses alone.
+
 ### 7.2 Token Bucket Implementation
 
 The integration SHOULD implement a client-side token bucket:
@@ -632,16 +770,16 @@ The integration SHOULD implement a client-side token bucket:
 
 ### 7.1.1 Rate Limit Credit Costs
 
-AMC's credit-based rate limiting assigns different costs per endpoint:
+AMC's credit-based rate limiting assigns different costs per endpoint. These are typical values; the actual costs are determined by the vendor agreement.
 
 | Endpoint Category | Credit Cost |
 |-------------------|-------------|
-| Movie, Theatre, Location (v2) | 1 credit |
+| Movie, Theatre (v2) | 1 credit |
 | Showtimes (v2) | 1 credit |
 | Seating (v3) | 2 credits |
 | Order (v3) | 2 credits |
 
-These are typical values; the actual costs are determined by the vendor agreement. The integration SHOULD log the `X-RateLimit-Remaining` header (if provided) to detect deviations from expected costs.
+> **⚠️ 2026-09-03 update:** The `X-RateLimit-Remaining` header is **not** provided by the API. Credit cost deviations cannot be detected via headers.
 
 ### 7.3 Adaptive Throttling
 
@@ -858,31 +996,41 @@ The integration MUST emit the following metrics:
 
 ## Appendix A: Known Attribute Codes
 
-> **Note:** This list is based on observed AMC API responses and public documentation as of 2026-08. It is NOT exhaustive — AMC may add, remove, or modify attribute codes without notice. The integration SHOULD handle unknown attribute codes gracefully (log a warning, pass through unchanged).
+> **Note:** This list is based on observed AMC API responses as of 2026-09-03. It is NOT exhaustive — AMC may add, remove, or modify attribute codes without notice. The integration SHOULD handle unknown attribute codes gracefully (log a warning, pass through unchanged).
 
 | Code | Name | Applies To |
 |------|------|------------|
-| `IMAX` | IMAX | Movie, Showtime |
-| `IMAX_LASER` | IMAX with Laser | Movie, Showtime |
-| `DOLBY_CINEMA` | Dolby Cinema | Movie, Showtime |
-| `PRIME` | PRIME Cinema | Movie, Showtime |
-| `4DX` | 4DX | Movie, Showtime |
-| `SCREENX` | ScreenX | Movie, Showtime |
-| `LASED` | Digital (Laser) | Showtime |
-| `3D` | 3D | Movie, Showtime |
-| `ADULTS_ONLY` | Rated R / NC-17 | Movie |
-| `PREMIERE` | Premiere Showing | Showtime |
-| `MATINEE` | Matinee Pricing | Showtime |
-| `VIP_LOUNGE` | VIP Experience | Theatre |
+| `70MM` | 70mm | Showtime |
+| `AMCARTISANFILMS` | AMC Artisan Films | Showtime |
+| `AMCCLUBROCKERS` | AMC Club Rockers | Showtime |
+| `AONELIVE` | AONe Live | Showtime |
+| `CLOSEDCAPTION` | Closed Caption | Theatre |
+| `DESCRIPTIVEVIDEO` | Audio Description | Theatre |
+| `DISNEYRWDS` | Disney RWDS | Showtime |
+| `IMAX` | IMAX at AMC | Showtime |
+| `IMAX70MM` | IMAX 70MM | Showtime |
+| `LASERATAMC` | Laser at AMC | Showtime |
+| `macguffins` | MacGuffins Bar | Theatre |
+| `digitalprojection` | Digital Projection | Theatre |
+| `reservedseating` | Reserved Seating | Theatre |
+| `theatrerentals` | Theatre Rentals | Theatre |
+| `assistedlisteningdevices` | Assisted Listening Devices | Theatre |
+| `wheelchairaccess` | Wheelchair Access | Theatre |
+| `nooutsidefoodandbeverage` | No Outside Food and Beverage | Theatre |
+| `alcoholcardingpolicy` | Alcohol Carding Policy | Theatre |
+| `REALD3D` | RealD 3D | Showtime |
+| `RECLINERSEATING` | Recliner Seating | Theatre |
+| `THRLSCHLS` | Thrillschls | Showtime |
 
 ## Appendix B: HTTP Headers Reference
 
 | Header | Value | Required For |
 |--------|-------|-------------|
 | `X-AMC-Vendor-Key` | `{api-key}` | All endpoints |
-| `X-AMC-Auth-Token` | `{auth-token}` | Seating v3, Order v3, Barcode v3 |
 | `Accept` | `application/json` | Recommended on all requests |
 | `Content-Type` | `application/json` | POST/PUT requests |
+
+> **⚠️ 2026-09-03 update:** `X-AMC-Auth-Token` is no longer functional — all v3 endpoints return 404. No rate-limit headers (`X-RateLimit-*`, `Retry-After`) are returned by the API.
 
 ## Appendix C: Glossary
 
