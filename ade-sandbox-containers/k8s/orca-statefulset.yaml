@@ -1,0 +1,89 @@
+# Orca dev sandbox: 1 replica, 120Gi iSCSI-backed workspace.
+#
+# ORCA_PAIRING_ADDRESS is hardcoded to the LoadBalancer IP assigned by MetalLB
+# (orca-dev-lb -> 10.10.111.138). Orca advertises this to pairing clients at
+# startup, so it must be a real reachable address before the pod starts. If the
+# LB service is ever recreated and gets a different IP, update this value and
+# `kubectl rollout restart statefulset/orca-dev -n ade-sandbox`.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: orca-dev
+  namespace: ade-sandbox
+  labels:
+    app: orca-dev
+spec:
+  serviceName: orca-dev
+  replicas: 1
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: orca-dev
+  template:
+    metadata:
+      labels:
+        app: orca-dev
+    spec:
+      # Image runs as uid/gid 1000 (`orca`). fsGroup makes kubelet chown the
+      # freshly-formatted ext4 volume so the service user can write to it.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: orca
+          image: 10.10.111.134:5000/ade-sandbox/orca:latest
+          # :latest is mutable here; Always so a rebuild+push is picked up on
+          # the next pod start. Switch to a digest for pinning.
+          imagePullPolicy: Always
+          ports:
+            - name: orca
+              containerPort: 6768
+          env:
+            - name: ORCA_PORT
+              value: "6768"
+            - name: ORCA_PAIRING_ADDRESS
+              value: "10.10.111.138"
+          # Only ~/workspace is persistent (see README: everything under $HOME
+          # outside workspace is ephemeral and resets with the pod).
+          volumeMounts:
+            - name: workspace
+              mountPath: /home/orca/workspace
+          # Orca boots its own Xvfb and takes ~60-90s to bind the socket.
+          startupProbe:
+            tcpSocket:
+              port: orca
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket:
+              port: orca
+            periodSeconds: 15
+          livenessProbe:
+            tcpSocket:
+              port: orca
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "1"
+              memory: 2Gi
+            limits:
+              cpu: "4"
+              memory: 8Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+        labels:
+          app: orca-dev
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: iscsi-ext4
+        resources:
+          requests:
+            storage: 120Gi

@@ -1,0 +1,299 @@
+# syntax=docker/dockerfile:1
+#
+# Remote runtime sandbox: cmux (manaflow-ai/cmux) remote endpoint + bun, uv,
+# Python 3.12, Go 1.26, JDK 25, kubectl, gh.
+#
+# cmux itself is a macOS-only app; the Linux-side runtime is `cmuxd-remote`,
+# the Go daemon the cmux app bootstraps onto remote hosts. This image bakes it
+# in and offers two headless modes, both as an unprivileged user:
+#
+#   1. SSH mode (default): sshd on :2222 (run by the unprivileged user).
+#      Drive it from the macOS app with:  cmux ssh -p 2222 cmux@<host>
+#      Requires an authorized key: mount ~/.ssh/authorized_keys or set
+#      CMUX_SSH_PUBLIC_KEY="<your pub key>".
+#
+#   2. WebSocket PTY mode (cloud-image path): set CMUX_WS_LEASE_FILE to a
+#      backend-written lease file; runs `cmuxd-remote serve --ws` on :7777.
+#
+# Build (multi-arch, push to registry):
+#   docker buildx build --builder multi-arch --platform linux/amd64,linux/arm64 \
+#     -t 10.10.111.134:5000/ade-sandbox/cmux:latest --push -f Dockerfile.cmux .
+#
+# Base: Ubuntu 24.04 (noble) — ships Python 3.12 in main.
+
+ARG BASE_IMAGE=ubuntu:24.04
+
+# ---------------------------------------------------------------------------
+# Stage 1: builder — download, checksum-verify artifacts
+# ---------------------------------------------------------------------------
+FROM ${BASE_IMAGE} AS builder
+
+ARG TARGETARCH
+ARG GO_VERSION=1.26.8
+ARG GO_SHA256_AMD64=d0f743b33e8d8945e6b1f432edd15785c70507121d6e2a723b21285eddf8b57b
+ARG GO_SHA256_ARM64=211ffced9dcb9633a55eac6364816ec0ddd951389a740e88fa8b3337971bdda0
+
+ARG JDK_VERSION=25.0.4.1+1
+ARG JDK_SHA256_AMD64=dbb698396d478e7fa2b1e50f4103324b2a99b90569ee27c33f2261f9215cf41e
+ARG JDK_SHA256_ARM64=69df11a02cfa3ef7d7ca645e03edce6778ec090e100f6ae2b42097865730ac52
+
+ARG KUBECTL_VERSION=v1.37.1
+ARG KUBECTL_SHA256_AMD64=65691ff77eb6fa44c908b77a1082c9f092c3b9733b5cefabec0d1104890e21a8
+ARG KUBECTL_SHA256_ARM64=ff749f4b78d9c4f1ec87307df9b50119ed819e2094aa9810cb9acffc3286c8c7
+
+ARG GH_VERSION=2.102.0
+ARG GH_SHA256_AMD64=bb766f710eef8ede859c18578c72c327597cd4c8a85b06001b1f3843c6019386
+ARG GH_SHA256_ARM64=7862c86c72f43df3a2d93ddde6f473285b4e2af61b494849846827e513ef6484
+
+ARG CMUX_VERSION=0.65.0
+ARG CMUXD_SHA256_AMD64=64482ca737544d8f2e96e3a9de436f552dda7fd90fb29ace2ec27a9b4af2f997
+ARG CMUXD_SHA256_ARM64=116bd61a92a72fb7b057ef4b0fc1db74af2b419830e34f1d1271e62cbd182cf9
+
+ARG NODE_VERSION=24.21.0
+ARG NODE_SHA256_AMD64=6e1db87ef58b8819e5d5402eff1536491b18edd8eb7bee5ef7897876e88dc5ff
+ARG NODE_SHA256_ARM64=724282c3b43aec998aa9527380465b45d229e021b58035f5f4f63095eabfe5d5
+
+RUN <<'EOF'
+set -eu
+apt-get update
+apt-get install -y --no-install-recommends ca-certificates curl file
+rm -rf /var/lib/apt/lists/*
+EOF
+
+# --- Go ---------------------------------------------------------------------
+RUN <<'EOF'
+set -eu
+case "${TARGETARCH}" in
+  amd64) GO_ARCH=amd64; GO_SHA="${GO_SHA256_AMD64}" ;;
+  arm64) GO_ARCH=arm64; GO_SHA="${GO_SHA256_ARM64}" ;;
+  *) echo "unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;;
+esac
+curl -fsSL --retry 3 -o /tmp/go.tar.gz \
+  "https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz"
+echo "${GO_SHA}  /tmp/go.tar.gz" | sha256sum -c -
+mkdir -p /opt/go
+tar -xzf /tmp/go.tar.gz -C /opt/go --strip-components=1
+rm /tmp/go.tar.gz
+EOF
+
+# --- JDK 25 (Eclipse Temurin LTS) --------------------------------------------
+RUN <<'EOF'
+set -eu
+case "${TARGETARCH}" in
+  amd64) JDK_PKG="OpenJDK25U-jdk_x64_linux_hotspot_25.0.4.1_1.tar.gz"; JDK_SHA="${JDK_SHA256_AMD64}" ;;
+  arm64) JDK_PKG="OpenJDK25U-jdk_aarch64_linux_hotspot_25.0.4.1_1.tar.gz"; JDK_SHA="${JDK_SHA256_ARM64}" ;;
+  *) echo "unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;;
+esac
+curl -fsSL --retry 3 -o /tmp/jdk.tar.gz \
+  "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-${JDK_VERSION}/${JDK_PKG}"
+echo "${JDK_SHA}  /tmp/jdk.tar.gz" | sha256sum -c -
+mkdir -p /opt/java
+tar -xzf /tmp/jdk.tar.gz -C /opt/java --strip-components=1
+rm /tmp/jdk.tar.gz
+EOF
+
+# --- kubectl ------------------------------------------------------------------
+RUN <<'EOF'
+set -eu
+case "${TARGETARCH}" in
+  amd64) KCTL_ARCH=amd64; KCTL_SHA="${KUBECTL_SHA256_AMD64}" ;;
+  arm64) KCTL_ARCH=arm64; KCTL_SHA="${KUBECTL_SHA256_ARM64}" ;;
+  *) echo "unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;;
+esac
+curl -fsSL --retry 3 -o /tmp/kubectl \
+  "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${KCTL_ARCH}/kubectl"
+echo "${KCTL_SHA}  /tmp/kubectl" | sha256sum -c -
+chmod 0755 /tmp/kubectl
+mkdir -p /staging/bin
+mv /tmp/kubectl /staging/bin/kubectl
+EOF
+
+# --- GitHub CLI (gh) ----------------------------------------------------------
+RUN <<'EOF'
+set -eu
+case "${TARGETARCH}" in
+  amd64) GH_ARCH=amd64; GH_SHA="${GH_SHA256_AMD64}" ;;
+  arm64) GH_ARCH=arm64; GH_SHA="${GH_SHA256_ARM64}" ;;
+  *) echo "unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;;
+esac
+curl -fsSL --retry 3 -o /tmp/gh.tar.gz \
+  "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${GH_ARCH}.tar.gz"
+echo "${GH_SHA}  /tmp/gh.tar.gz" | sha256sum -c -
+mkdir -p /staging/bin
+tar -xzf /tmp/gh.tar.gz -C /tmp
+mv "/tmp/gh_${GH_VERSION}_linux_${GH_ARCH}/bin/gh" /staging/bin/gh
+chmod 0755 /staging/bin/gh
+rm -rf "/tmp/gh_${GH_VERSION}_linux_${GH_ARCH}" /tmp/gh.tar.gz
+EOF
+
+# --- cmuxd-remote (cmux remote daemon, prebuilt by upstream with checksums) ---
+RUN <<'EOF'
+set -eu
+case "${TARGETARCH}" in
+  amd64) CMUXD_ARCH=amd64; CMUXD_SHA="${CMUXD_SHA256_AMD64}" ;;
+  arm64) CMUXD_ARCH=arm64; CMUXD_SHA="${CMUXD_SHA256_ARM64}" ;;
+  *) echo "unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;;
+esac
+curl -fsSL --retry 3 -o /tmp/cmuxd-remote \
+  "https://github.com/manaflow-ai/cmux/releases/download/v${CMUX_VERSION}/cmuxd-remote-linux-${CMUXD_ARCH}"
+echo "${CMUXD_SHA}  /tmp/cmuxd-remote" | sha256sum -c -
+chmod 0755 /tmp/cmuxd-remote
+mkdir -p /staging/bin
+mv /tmp/cmuxd-remote /staging/bin/cmuxd-remote
+EOF
+
+# --- Node.js LTS (npm is the distribution channel for the agent CLIs) --------
+RUN <<'EOF'
+set -eu
+case "${TARGETARCH}" in
+  amd64) NODE_ARCH=x64;   NODE_SHA="${NODE_SHA256_AMD64}" ;;
+  arm64) NODE_ARCH=arm64; NODE_SHA="${NODE_SHA256_ARM64}" ;;
+  *) echo "unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;;
+esac
+curl -fsSL --retry 3 -o /tmp/node.tar.gz \
+  "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz"
+echo "${NODE_SHA}  /tmp/node.tar.gz" | sha256sum -c -
+mkdir -p /opt/node
+tar -xzf /tmp/node.tar.gz -C /opt/node --strip-components=1
+rm /tmp/node.tar.gz
+EOF
+
+# ---------------------------------------------------------------------------
+# Stage 2: runtime — minimal image, non-root user, cmuxd-remote entrypoint
+# ---------------------------------------------------------------------------
+FROM ${BASE_IMAGE} AS runtime
+
+ARG CMUX_VERSION=0.65.0
+ARG BUN_VERSION=1.4.2
+ARG UV_VERSION=0.12.21
+ARG CLAUDE_CODE_VERSION=2.1.295
+ARG CODEX_VERSION=0.162.0
+ARG OPENCODE_VERSION=1.18.35
+
+# No Electron libs / Xvfb needed: cmuxd-remote is a plain Go binary.
+RUN <<'EOF'
+set -eu
+apt-get update
+apt-get install -y --no-install-recommends \
+  ca-certificates curl jq git openssh-client openssh-server tini \
+  python3.12 python3.12-venv python3-pip
+rm -rf /var/lib/apt/lists/*
+# sshd privilege-separation dir, owned by the unprivileged service user.
+mkdir -p /run/sshd
+EOF
+
+# Toolchains from builder (root-owned; the service user cannot tamper with them).
+COPY --from=builder /opt/go   /opt/go
+COPY --from=builder /opt/java /opt/java
+COPY --from=builder /staging/bin/kubectl      /usr/local/bin/kubectl
+COPY --from=builder /staging/bin/gh           /usr/local/bin/gh
+COPY --from=builder /staging/bin/cmuxd-remote /usr/local/bin/cmuxd-remote
+
+# Bun and uv from their official images (single static binaries).
+COPY --from=oven/bun:1.4.2            /usr/local/bin/bun /usr/local/bin/bun
+COPY --from=ghcr.io/astral-sh/uv:0.12.21 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.12.21 /uvx /bin/uvx
+
+# Node.js LTS + the agent CLIs. npm's global prefix is the node tree itself, so
+# the binaries land in /opt/node/bin (root-owned; the service user can't upgrade
+# them out from under the pin).
+COPY --from=builder /opt/node /opt/node
+RUN <<'EOF'
+set -eu
+export PATH="/opt/node/bin:${PATH}"
+npm install -g --no-audit --no-fund \
+  "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
+  "@openai/codex@${CODEX_VERSION}" \
+  "opencode-ai@${OPENCODE_VERSION}"
+npm cache clean --force
+rm -rf /root/.npm
+EOF
+
+# Busybox-style dispatch: invoked as `cmux`, cmuxd-remote runs the cli subcommand.
+RUN ln -s /usr/local/bin/cmuxd-remote /usr/local/bin/cmux
+
+# Dedicated non-root service user (fixed UID/GID for volume permission sanity).
+# Ubuntu's base image ships a default 'ubuntu' user at 1000:1000 — remove it first.
+RUN <<'EOF'
+set -eu
+userdel -r ubuntu 2>/dev/null || true
+groupdel ubuntu 2>/dev/null || true
+groupadd --gid 1000 cmux
+useradd --uid 1000 --gid cmux --create-home --shell /bin/bash cmux
+mkdir -p /home/cmux/workspace /home/cmux/go/bin /home/cmux/.ssh
+chmod 700 /home/cmux/.ssh
+chown -R cmux:cmux /home/cmux
+chown cmux:cmux /run/sshd
+EOF
+
+ENV JAVA_HOME=/opt/java \
+    GOROOT=/opt/go \
+    GOPATH=/home/cmux/go \
+    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/go/bin:/opt/java/bin:/opt/node/bin:/home/cmux/.bun/bin:/home/cmux/.local/bin:/home/cmux/go/bin \
+    PYTHONUNBUFFERED=1 \
+    BUN_INSTALL=/home/cmux/.bun \
+    UV_LINK_MODE=copy \
+    CMUX_SSH_PORT=2222 \
+    CMUX_WS_PORT=7777
+
+# Entrypoint: WS PTY mode if a lease file is provided, else unprivileged sshd.
+COPY <<-'EOF' /usr/local/bin/cmux-entrypoint.sh
+#!/bin/sh
+set -eu
+
+# Explicit command override (e.g. `docker run <image> bash`).
+if [ "$#" -gt 0 ]; then
+  exec "$@"
+fi
+
+# Mode 2: WebSocket PTY transport (cloud-image path; lease written by backend).
+if [ -n "${CMUX_WS_LEASE_FILE:-}" ]; then
+  exec cmuxd-remote serve --ws \
+    --auth-lease-file "${CMUX_WS_LEASE_FILE}" \
+    --listen "0.0.0.0:${CMUX_WS_PORT:-7777}"
+fi
+
+# Mode 1: SSH endpoint for `cmux ssh -p 2222 cmux@<host>` from the macOS app.
+SSH_DIR="${HOME}/.ssh"
+mkdir -p "${SSH_DIR}"
+chmod 700 "${SSH_DIR}"
+if [ -n "${CMUX_SSH_PUBLIC_KEY:-}" ]; then
+  printf '%s\n' "${CMUX_SSH_PUBLIC_KEY}" >> "${SSH_DIR}/authorized_keys"
+  unset CMUX_SSH_PUBLIC_KEY
+fi
+if [ ! -s "${SSH_DIR}/authorized_keys" ]; then
+  echo "ERROR: no authorized keys. Mount one at ${SSH_DIR}/authorized_keys or set CMUX_SSH_PUBLIC_KEY." >&2
+  exit 1
+fi
+chmod 600 "${SSH_DIR}/authorized_keys"
+if [ ! -f "${SSH_DIR}/host_ed25519_key" ]; then
+  ssh-keygen -q -t ed25519 -N '' -f "${SSH_DIR}/host_ed25519_key"
+fi
+cat > "${SSH_DIR}/sshd_config" <<CFG
+Port ${CMUX_SSH_PORT:-2222}
+ListenAddress 0.0.0.0
+HostKey ${SSH_DIR}/host_ed25519_key
+PidFile ${HOME}/.sshd.pid
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+UsePAM no
+PrintMotd no
+AcceptEnv LANG LC_*
+SetEnv PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/go/bin:/opt/java/bin:/opt/node/bin:/home/cmux/.bun/bin:/home/cmux/.local/bin:/home/cmux/go/bin
+Subsystem sftp internal-sftp
+CFG
+exec /usr/sbin/sshd -D -f "${SSH_DIR}/sshd_config"
+EOF
+RUN chmod 755 /usr/local/bin/cmux-entrypoint.sh
+
+USER cmux
+WORKDIR /home/cmux/workspace
+
+EXPOSE 2222 7777
+
+# TCP liveness on whichever transport is active.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD bash -c 'p=${CMUX_SSH_PORT:-2222}; [ -n "${CMUX_WS_LEASE_FILE:-}" ] && p=${CMUX_WS_PORT:-7777}; exec 3<>/dev/tcp/127.0.0.1/$p' || exit 1
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/cmux-entrypoint.sh"]

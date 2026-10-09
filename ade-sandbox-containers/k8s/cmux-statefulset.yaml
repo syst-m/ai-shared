@@ -1,0 +1,93 @@
+# cmux dev sandbox: 1 replica, 120Gi iSCSI-backed workspace.
+#
+# sshd on :2222, key-only auth. Connect from the macOS app with:
+#   cmux ssh -p 2222 cmux@10.10.111.139
+#
+# The authorized key comes from the `cmux-ssh-key` Secret (key: publicKey),
+# created out-of-band so no key material is committed here:
+#   kubectl -n ade-sandbox create secret generic cmux-ssh-key \
+#     --from-file=publicKey=$HOME/.ssh/id_ed25519.pub
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cmux-dev
+  namespace: ade-sandbox
+  labels:
+    app: cmux-dev
+spec:
+  serviceName: cmux-dev
+  replicas: 1
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: cmux-dev
+  template:
+    metadata:
+      labels:
+        app: cmux-dev
+    spec:
+      # Image runs as uid/gid 1000 (`cmux`). fsGroup makes kubelet chown the
+      # freshly-formatted ext4 volume so the service user can write to it.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: cmux
+          image: 10.10.111.134:5000/ade-sandbox/cmux:latest
+          imagePullPolicy: Always
+          ports:
+            - name: ssh
+              containerPort: 2222
+          env:
+            - name: CMUX_SSH_PORT
+              value: "2222"
+            - name: CMUX_SSH_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cmux-ssh-key
+                  key: publicKey
+          # Only ~/workspace is persistent. Note $HOME/.ssh is therefore
+          # ephemeral: the sshd host key is regenerated on every pod start, so
+          # clear the stale entry from your known_hosts after a rebuild:
+          #   ssh-keygen -R '[10.10.111.139]:2222'
+          volumeMounts:
+            - name: workspace
+              mountPath: /home/cmux/workspace
+          startupProbe:
+            tcpSocket:
+              port: ssh
+            periodSeconds: 5
+            failureThreshold: 12
+          readinessProbe:
+            tcpSocket:
+              port: ssh
+            periodSeconds: 15
+          livenessProbe:
+            tcpSocket:
+              port: ssh
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+        labels:
+          app: cmux-dev
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: iscsi-ext4
+        resources:
+          requests:
+            storage: 120Gi
