@@ -269,6 +269,27 @@ chmod 600 "${SSH_DIR}/authorized_keys"
 if [ ! -f "${SSH_DIR}/host_ed25519_key" ]; then
   ssh-keygen -q -t ed25519 -N '' -f "${SSH_DIR}/host_ed25519_key"
 fi
+# Assemble the SetEnv line from this container's own environment. sshd builds a
+# session environment from a fixed whitelist (HOME, LOGNAME, MAIL, PATH, SHELL,
+# USER, TERM) plus AcceptEnv and SetEnv -- it does not hand the rest of its own
+# environment to sessions. So vars injected by the k8s pod spec (the
+# secretKeyRef'd API keys and the configMapRef'd settings) are invisible to an
+# SSH-launched shell unless they appear here. Deriving the list from `env`
+# instead of hardcoding it means a new var in the Secret or ConfigMap reaches
+# SSH sessions without a Dockerfile edit, and $PATH is no longer restated from
+# the ENV line above.
+setenv="PATH=$PATH"
+for kv in $(env | sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p'); do
+  case "$kv" in
+    PATH|HOME|LOGNAME|MAIL|SHELL|SHLVL|_|PWD|USER|SSH_*|TERM) continue ;;
+  esac
+  eval "v=\${$kv}"
+  # sshd allows quoting a value when it contains whitespace.
+  case "$v" in
+    *[!A-Za-z0-9._/:=-]*) v="\"$v\"" ;;
+  esac
+  setenv="$setenv $kv=$v"
+done
 cat > "${SSH_DIR}/sshd_config" <<CFG
 Port ${CMUX_SSH_PORT:-2222}
 ListenAddress 0.0.0.0
@@ -280,9 +301,14 @@ PubkeyAuthentication yes
 UsePAM no
 PrintMotd no
 AcceptEnv LANG LC_*
-SetEnv PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/go/bin:/opt/java/bin:/opt/node/bin:/home/cmux/.bun/bin:/home/cmux/.local/bin:/home/cmux/go/bin
+SetEnv ${setenv}
 Subsystem sftp internal-sftp
 CFG
+# The file now contains the API keys, so keep it owner-only.
+chmod 600 "${SSH_DIR}/sshd_config"
+# Validate before exec'ing: a malformed SetEnv would otherwise produce a running
+# container that never passes its tcpSocket readiness probe.
+/usr/sbin/sshd -t -f "${SSH_DIR}/sshd_config"
 exec /usr/sbin/sshd -D -f "${SSH_DIR}/sshd_config"
 EOF
 RUN chmod 755 /usr/local/bin/cmux-entrypoint.sh

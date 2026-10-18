@@ -36,6 +36,41 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
       terminationGracePeriodSeconds: 30
+      # Seeds ~/.codex and ~/.claude from the ConfigMap. The config files must
+      # land in a *writable* directory — the CLIs write state (sessions, history,
+      # ~/.claude.json) alongside them, so mounting the ConfigMap read-only
+      # straight onto ~/.claude breaks them. emptyDir + copy-if-absent keeps them
+      # writable, and the "if absent" test means a real home-dir volume (later)
+      # wins over the seeded default instead of being clobbered by it.
+      initContainers:
+        - name: seed-agent-config
+          image: 10.10.111.134:5000/ade-sandbox/cmux:latest
+          imagePullPolicy: Always
+          command: ["bash", "-c"]
+          args:
+            - |
+              # Absolute paths, not $HOME: kubelet does not guarantee HOME is
+              # set for a container whose USER comes from the image config.
+              set -eu
+              home=/home/cmux
+              mkdir -p "$home/.codex" "$home/.claude"
+              [ -f "$home/.codex/config.toml" ]   || cp /opt/agent-config/codex-config.toml "$home/.codex/config.toml"
+              [ -f "$home/.claude/settings.json" ] || cp /opt/agent-config/claude-settings.json "$home/.claude/settings.json"
+              ls -l "$home/.codex/config.toml" "$home/.claude/settings.json"
+          # No fsGroup here — it's pod-level only (set above), and kubelet
+          # applies it to the emptyDirs so uid/gid 1000 can write them.
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+          volumeMounts:
+            - name: agent-config
+              mountPath: /opt/agent-config
+              readOnly: true
+            - name: codex-config
+              mountPath: /home/cmux/.codex
+            - name: claude-config
+              mountPath: /home/cmux/.claude
       containers:
         - name: cmux
           image: 10.10.111.134:5000/ade-sandbox/cmux:latest
@@ -51,13 +86,44 @@ spec:
                 secretKeyRef:
                   name: cmux-ssh-key
                   key: publicKey
+            # Credentials for the agent CLIs (claude / codex). Values come from
+            # the ade-agent-keys Secret; see k8s/create-agent-secret.sh.
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ade-agent-keys
+                  key: ANTHROPIC_API_KEY
+            - name: ANTHROPIC_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ade-agent-keys
+                  key: ANTHROPIC_AUTH_TOKEN
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ade-agent-keys
+                  key: OPENAI_API_KEY
+          # Non-secret agent env (ANTHROPIC_BASE_URL, CLAUDE_CODE_* token limits,
+          # OPENAI_BASE_URL). File-bearing keys live in a separate ConfigMap so
+          # envFrom doesn't try to export them as env vars.
+          envFrom:
+            - configMapRef:
+                name: ade-agent-env
           # Only ~/workspace is persistent. Note $HOME/.ssh is therefore
           # ephemeral: the sshd host key is regenerated on every pod start, so
           # clear the stale entry from your known_hosts after a rebuild:
           #   ssh-keygen -R '[10.10.111.139]:2222'
+          #
+          # ~/.codex and ~/.claude are emptyDir-backed (seeded by the init
+          # container), so they also reset on pod replacement — see the note on
+          # home-dir persistence in k8s/README.md.
           volumeMounts:
             - name: workspace
               mountPath: /home/cmux/workspace
+            - name: codex-config
+              mountPath: /home/cmux/.codex
+            - name: claude-config
+              mountPath: /home/cmux/.claude
           startupProbe:
             tcpSocket:
               port: ssh
@@ -80,6 +146,14 @@ spec:
             limits:
               cpu: "2"
               memory: 2Gi
+      volumes:
+        - name: agent-config
+          configMap:
+            name: ade-agent-files
+        - name: codex-config
+          emptyDir: {}
+        - name: claude-config
+          emptyDir: {}
   volumeClaimTemplates:
     - metadata:
         name: workspace

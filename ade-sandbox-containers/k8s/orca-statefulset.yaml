@@ -34,6 +34,42 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
       terminationGracePeriodSeconds: 60
+      # Seeds ~/.codex and ~/.claude from the ConfigMap. The config files must
+      # land in a *writable* directory — the CLIs write state (sessions, history,
+      # ~/.claude.json) alongside them, and the Orca runtime installs its own
+      # hooks into ~/.claude/settings.json, so a read-only ConfigMap mount
+      # straight onto ~/.claude breaks them. emptyDir + copy-if-absent keeps
+      # them writable, and "if absent" means a real home-dir volume (later) wins
+      # over the seeded default instead of being clobbered by it.
+      initContainers:
+        - name: seed-agent-config
+          image: 10.10.111.134:5000/ade-sandbox/orca:latest
+          imagePullPolicy: Always
+          command: ["bash", "-c"]
+          args:
+            - |
+              # Absolute paths, not $HOME: kubelet does not guarantee HOME is
+              # set for a container whose USER comes from the image config.
+              set -eu
+              home=/home/orca
+              mkdir -p "$home/.codex" "$home/.claude"
+              [ -f "$home/.codex/config.toml" ]   || cp /opt/agent-config/codex-config.toml "$home/.codex/config.toml"
+              [ -f "$home/.claude/settings.json" ] || cp /opt/agent-config/claude-settings.json "$home/.claude/settings.json"
+              ls -l "$home/.codex/config.toml" "$home/.claude/settings.json"
+          # No fsGroup here — it's pod-level only (set above), and kubelet
+          # applies it to the emptyDirs so uid/gid 1000 can write them.
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+          volumeMounts:
+            - name: agent-config
+              mountPath: /opt/agent-config
+              readOnly: true
+            - name: codex-config
+              mountPath: /home/orca/.codex
+            - name: claude-config
+              mountPath: /home/orca/.claude
       containers:
         - name: orca
           image: 10.10.111.134:5000/ade-sandbox/orca:latest
@@ -48,11 +84,39 @@ spec:
               value: "6768"
             - name: ORCA_PAIRING_ADDRESS
               value: "10.10.111.138"
+            # Credentials for the agent CLIs (claude / codex). Values come from
+            # the ade-agent-keys Secret; see k8s/create-agent-secret.sh.
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ade-agent-keys
+                  key: ANTHROPIC_API_KEY
+            - name: ANTHROPIC_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ade-agent-keys
+                  key: ANTHROPIC_AUTH_TOKEN
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ade-agent-keys
+                  key: OPENAI_API_KEY
+          # Non-secret agent env (ANTHROPIC_BASE_URL, CLAUDE_CODE_* token limits,
+          # OPENAI_BASE_URL). File-bearing keys live in a separate ConfigMap so
+          # envFrom doesn't try to export them as env vars.
+          envFrom:
+            - configMapRef:
+                name: ade-agent-env
           # Only ~/workspace is persistent (see README: everything under $HOME
-          # outside workspace is ephemeral and resets with the pod).
+          # outside workspace is ephemeral and resets with the pod). ~/.codex
+          # and ~/.claude are emptyDir-backed and reseeded each pod start.
           volumeMounts:
             - name: workspace
               mountPath: /home/orca/workspace
+            - name: codex-config
+              mountPath: /home/orca/.codex
+            - name: claude-config
+              mountPath: /home/orca/.claude
           # Orca boots its own Xvfb and takes ~60-90s to bind the socket.
           startupProbe:
             tcpSocket:
@@ -76,6 +140,14 @@ spec:
             limits:
               cpu: "4"
               memory: 8Gi
+      volumes:
+        - name: agent-config
+          configMap:
+            name: ade-agent-files
+        - name: codex-config
+          emptyDir: {}
+        - name: claude-config
+          emptyDir: {}
   volumeClaimTemplates:
     - metadata:
         name: workspace

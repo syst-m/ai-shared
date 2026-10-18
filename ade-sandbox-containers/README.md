@@ -101,7 +101,11 @@ backend-written lease file and the entrypoint runs
 Verified at the current pin: `cmuxd-remote version` inside the container prints
 the pinned version, and the full toolchain resolves
 (`go`, `java`, `python3.12`, `bun`, `uv`, `kubectl`, `gh`).
-`SetEnv PATH` is set in sshd_config so toolchains resolve in SSH sessions.
+sshd's `SetEnv` is generated at startup from the container's own environment, so
+every var the pod spec injects (toolchain paths, `ANTHROPIC_*`, `OPENAI_*`)
+reaches an SSH-launched shell. sshd builds session environments from a fixed
+whitelist plus `SetEnv` and does not pass the rest of its environment to
+sessions, so a hardcoded list would silently drop anything added later.
 
 ## Building
 

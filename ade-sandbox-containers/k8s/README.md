@@ -17,8 +17,10 @@ Both images bake in the same pinned toolchain plus the agent CLIs
 k8s/
   namespace.yaml           # ade-sandbox
   services.yaml            # headless (governing) + LoadBalancer per runtime
+  agent-config.yaml        # ade-agent-env (env vars) + ade-agent-files (codex/claude files)
   orca-statefulset.yaml    # 1 replica, 120Gi iscsi-ext4 -> /home/orca/workspace
   cmux-statefulset.yaml    # 1 replica, 120Gi iscsi-ext4 -> /home/cmux/workspace
+  create-agent-secret.sh   # builds ade-agent-keys from ~/.zshrc (values via env, never argv)
 ```
 
 ## Apply
@@ -35,9 +37,37 @@ kubectl -n ade-sandbox get svc -w          # wait for EXTERNAL-IP on both *-lb
 kubectl -n ade-sandbox create secret generic cmux-ssh-key \
   --from-file=publicKey=$HOME/.ssh/id_ed25519.pub
 
+# agent CLI credentials (ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN / OPENAI_API_KEY),
+# read out of ~/.zshrc into a Secret. The values are passed via the environment,
+# never argv, so they stay out of the process list and shell history.
+k8s/create-agent-secret.sh
+
+kubectl apply -f k8s/agent-config.yaml
 kubectl apply -f k8s/orca-statefulset.yaml -f k8s/cmux-statefulset.yaml
 kubectl -n ade-sandbox get pods -w
 ```
+
+## Agent credentials and config
+
+The agent CLIs (`claude`, `codex`) get their settings from three objects, and the
+split is deliberate:
+
+| Object | Holds | Consumed by |
+|---|---|---|
+| Secret `ade-agent-keys` | the API keys | `valueFrom.secretKeyRef` in both StatefulSets |
+| ConfigMap `ade-agent-env` | non-secret scalars (`ANTHROPIC_BASE_URL`, `CLAUDE_CODE_*`, `OPENAI_BASE_URL`) | `envFrom` in both StatefulSets |
+| ConfigMap `ade-agent-files` | `codex-config.toml`, `claude-settings.json` | mounted read-only, copied into `$HOME` by the `seed-agent-config` initContainer |
+
+No secret value is committed to this repo — the StatefulSets reference the Secret by
+name, and `create-agent-secret.sh` is the only place the values are read.
+
+`ade-agent-env` and `ade-agent-files` are separate ConfigMaps because `envFrom`
+exports *every* key as an env var, and a file key like `codex-config.toml` is not a
+valid env var name — kubelet skips it with an `InvalidVariableNames` warning.
+
+On **cmux**, sshd's `SetEnv` is generated at container start from the full container
+environment, which is what makes these vars visible to an SSH-launched shell — see
+`../Dockerfile.cmux`. **Orca has no sshd**, so `envFrom`/`secretKeyRef` alone cover it.
 
 Namespaces are written explicitly in every manifest. `kubectl apply -f a.yaml
 -f b.yaml` does **not** carry a namespace from one file into the next — anything
