@@ -36,6 +36,13 @@ Example database-backed REST API for inventorying MCP metadata — audiences, cl
 
 A zero-to-100 Python refresher in the [Go by Example](https://gobyexample.com/) style, for experienced programmers getting back into Python — backend/web-API weighted. Single self-contained HTML file with **57 editable playgrounds** running real CPython 3.14 in the browser via Pyodide (CDN, ~10 MB one-time). Double-click [`python-by-example.html`](learning/python-by-example/python-by-example.html) to open — no server needed.
 
+### 🛠 Tools (`tools/`)
+
+| Tool | Description |
+|------|-------------|
+| [`amc-showtimes/`](tools/amc-showtimes/README.md) | AMC showtimes client — Python package, CLI, [API reference](tools/amc-showtimes/API.md), a [Claude skill](tools/amc-showtimes/SKILL.md), a [quickstart](tools/amc-showtimes/examples/quickstart.py), and a test suite |
+| [`pv-sentinel/`](tools/pv-sentinel/README.md) | Go DaemonSet that probes node volumes and remediates them. Two detectors: read-only ext4 mounts (whose `/proc/mounts` lies, so the only honest probe is creating a file) and stuck PVC expansions (a `spec`/`status` size gap whose usual cause is an iSCSI session never rescanned). Ships in `report` mode; [an example](tools/pv-sentinel/examples/daemonset-remediate.yaml) shows the remediate posture |
+
 ## Setup & Publishing
 
 ### GitHub Pages

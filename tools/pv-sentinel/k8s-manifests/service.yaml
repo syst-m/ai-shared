@@ -1,0 +1,29 @@
+# Headless service in front of the DaemonSet.
+#
+# clusterIP: None is deliberate. A normal ClusterIP service load-balances across
+# all five pods, so scraping it returns one random node's gauges per scrape and
+# the per-node series jump between nodes every interval. Headless gives every pod
+# its own DNS record, which is what Prometheus's kubernetes_sd (role: pod, or
+# role: endpoints on this service) and a ServiceMonitor both expect.
+apiVersion: v1
+kind: Service
+metadata:
+  name: pv-sentinel-service
+  namespace: kube-system
+  labels:
+    app: pv-sentinel
+  # Redundant with the pod-template annotations, kept so a ServiceMonitor or an
+  # endpoints-role scrape picks the port up by name too.
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/metrics"
+spec:
+  clusterIP: None
+  selector:
+    app: pv-sentinel
+  ports:
+  - name: metrics
+    port: 8080
+    targetPort: metrics
+    protocol: TCP

@@ -1,0 +1,48 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - ineffassign
+    - unused
+    - gosec
+  settings:
+    errcheck:
+      exclude-functions:
+        - (net/http.ResponseWriter).Write
+        - (io.WriterCloser).Close
+        - os.WriteFile
+        - os.Chdir
+        - (*encoding/json.Encoder).Encode
+  exclusions:
+    rules:
+      # All test files: os.Setenv G104 unhandled (test setup, OK)
+      - path: _test\.go$
+        linters:
+          - gosec
+        text: G104
+      # Test files: os.Setenv/Unsetenv error return not checked
+      - path: _test\.go
+        linters:
+          - errcheck
+        text: 'os\.(Setenv|Unsetenv)'
+      # Test files: os.Remove/os.RemoveAll error returns not checked in cleanup
+      - path: _test\.go
+        linters:
+          - errcheck
+        text: 'os\.(Remove|RemoveAll)'
+      # gosec: G306 WriteFile permissions in test files (0644 OK for tests)
+      - path: _test\.go
+        linters:
+          - gosec
+        text: G306
+
+formatters:
+  enable:
+    - gofmt
+
+run:
+  timeout: 5m

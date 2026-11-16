@@ -1,0 +1,148 @@
+# Example: the remediate posture, as opposed to the shipped report-only manifest.
+#
+# k8s-manifests/daemonset.yaml is what runs in the lab and it detects without
+# acting (MODE=report). This file shows the same DaemonSet with the fix turned on,
+# so the two can be diffed to see exactly what enabling remediation changes — and
+# what it deliberately does not.
+#
+# The asymmetry is the point. The two detectors get separate modes because their
+# actions are not the same kind of action:
+#
+#   ro-mount  → deletes the pod consuming a read-only volume. Disruptive, and for a
+#               bare pod (no ownerRefs) permanent, since nothing recreates it.
+#   resize    → `iscsiadm --mode session --rescan`. A read-only initiator query
+#               that makes the kernel re-read a LUN's size. Touches no filesystem
+#               and deletes nothing.
+#
+# So the resize half is safe to enable first, and the pod-deletion half is not.
+# This example turns on the cheap one and leaves the expensive one in report.
+#
+# Apply with: kubectl apply -f examples/daemonset-remediate.yaml
+#   (k8s-manifests/rbac.yaml must exist first — this pod uses that ServiceAccount.)
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: pv-sentinel-daemonset
+  namespace: kube-system
+  labels:
+    app: pv-sentinel
+spec:
+  selector:
+    matchLabels:
+      app: pv-sentinel
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: pv-sentinel
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: pv-sentinel
+      tolerations:
+      - operator: Exists
+      containers:
+      - name: sentinel
+        # The tag matters here: open-iscsi (which provides iscsiadm) is installed
+        # only in images built from the Dockerfile at this commit or later. An
+        # older image sets MODE_RESIZE=remediate and still returns
+        # ErrNoISCSIADM on every stuck volume — a correct answer, but not a fix.
+        image: 10.10.111.134:5000/pv-sentinel:v0.1.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: metrics
+          containerPort: 8080
+          protocol: TCP
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+
+        # --- the mode matrix -------------------------------------------------
+        # MODE is the default for every detector; MODE_* override it per detector.
+        # An unset override inherits MODE, so setting them explicitly is how you
+        # get a posture that MODE alone cannot express.
+        - name: MODE
+          value: "report"
+        # Cheap fix, on: a session rescan.
+        - name: MODE_RESIZE
+          value: "remediate"
+        # Expensive fix, still off: pod deletion. Flip this only after reading
+        # the resize detector's report, and see ALLOW_BARE_PODS below.
+        - name: MODE_RO_MOUNT
+          value: "report"
+        # ---------------------------------------------------------------
+
+        - name: ISCSIADM_PATH
+          value: "/usr/sbin/iscsiadm"
+        - name: RESIZE_THRESHOLD
+          value: "10m"
+        - name: INTERVAL
+          value: "300s"
+        - name: LOG_LEVEL
+          value: "info"
+
+        # Set explicitly rather than inherited, because the two window defaults
+        # were 60h in the code while documented as 60m. An explicit value sidesteps
+        # which side of that you are running.
+        - name: COOLDOWN
+          value: "60m"
+        - name: NODE_WINDOW
+          value: "60m"
+        - name: MAX_PER_NODE
+          value: "3"
+        - name: GRACE_PERIOD
+          value: "30"
+        - name: POLL_TIMEOUT
+          value: "180s"
+        - name: POLL_INTERVAL
+          value: "5s"
+
+        # false (the default) means a pod with no ownerRefs is never deleted,
+        # because nothing will recreate it — deleting it is deleting the workload.
+        # true permits it, which is a policy decision about the cluster, not a
+        # tuning knob.
+        - name: ALLOW_BARE_PODS
+          value: "false"
+
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          allowPrivilegeEscalation: false
+        volumeMounts:
+        - name: kubelet
+          mountPath: /var/lib/kubelet
+          mountPropagation: HostToContainer
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: metrics
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: "/healthz"
+            port: metrics
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 3
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+      volumes:
+      - name: kubelet
+        hostPath:
+          path: /var/lib/kubelet
+          type: Directory

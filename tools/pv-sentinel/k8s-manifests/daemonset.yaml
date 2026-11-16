@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: pv-sentinel-daemonset
+  namespace: kube-system
+  labels:
+    app: pv-sentinel
+spec:
+  selector:
+    matchLabels:
+      app: pv-sentinel
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # One node at a time: a DaemonSet rollout that restarts every pod at once
+      # would blank the metrics for the whole cluster for the rollout window.
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: pv-sentinel
+      # Primary scrape path: Prometheus kubernetes_sd with role: pod picks these
+      # up, giving one target per node rather than one load-balanced endpoint.
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      # The line apikey-mgr's own manifest omits, which is what makes its RBAC
+      # dead: the Role exists but no pod ever asks for the ServiceAccount.
+      serviceAccountName: pv-sentinel
+      # Cover control-plane and tainted nodes; the point is to catch a broken
+      # volume on any node, including ones normal workloads avoid.
+      tolerations:
+      - operator: Exists
+      containers:
+      - name: sentinel
+        image: 10.10.111.134:5000/pv-sentinel:v0.1.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: metrics
+          containerPort: 8080
+          protocol: TCP
+        env:
+        # Downward API. resolveNode prefers NODE_NAME over NODE over hostname,
+        # so this is the value that wins in-cluster.
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        # Ships in report mode: detect and expose, delete nothing. Flipped to
+        # remediate once the report is reviewed against the known-good state.
+        #
+        # MODE is the default for every detector; the two below override it per
+        # detector, because deleting a pod and rescanning an iSCSI session are not
+        # the same kind of action. Setting them explicitly here — to the same
+        # value MODE already has — is what makes the split visible in the manifest
+        # instead of implicit in the code.
+        - name: MODE
+          value: "report"
+        - name: MODE_RO_MOUNT
+          value: "report"
+        # The resize fix is `iscsiadm --mode session --rescan`, and the current
+        # image has no iscsiadm (see Dockerfile: it installs ca-certificates
+        # only). Until the image gains the binary, remediate here would report
+        # `failed` with ErrNoISCSIADM on every stuck volume — correct, but not
+        # useful. Keep it in report and flip it in the same change that adds the
+        # package to the image.
+        - name: MODE_RESIZE
+          value: "report"
+        - name: ISCSIADM_PATH
+          value: "/usr/sbin/iscsiadm"
+        # A genuine expansion finishes in seconds to minutes; a gap still open
+        # after 10m is stuck, not in flight. Without a threshold every resize in
+        # the cluster is an alert.
+        - name: RESIZE_THRESHOLD
+          value: "10m"
+        - name: INTERVAL
+          value: "300s"
+        - name: LOG_LEVEL
+          value: "info"
+        # Root, not privileged. Root is needed to create the probe file inside
+        # root-owned volume mount directories; SYS_ADMIN and friends are not.
+        # This is the exact securityContext validated against k8s-ctrl before
+        # the manifest was written.
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          allowPrivilegeEscalation: false
+        volumeMounts:
+        # /var/lib/kubelet only, not all of /. HostToContainer is what makes
+        # kubelet's later mounts of new CSI volumes visible inside this
+        # container; without it the pod sees only what was mounted before it
+        # started.
+        - name: kubelet
+          mountPath: /var/lib/kubelet
+          mountPropagation: HostToContainer
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: metrics
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: metrics
+          initialDelaySeconds: 5
+          periodSeconds: 15
+          timeoutSeconds: 3
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+      volumes:
+      - name: kubelet
+        hostPath:
+          path: /var/lib/kubelet
+          type: Directory

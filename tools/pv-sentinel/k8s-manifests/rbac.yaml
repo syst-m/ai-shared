@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: pv-sentinel
+  namespace: kube-system
+  labels:
+    app: pv-sentinel
+---
+# ClusterRole, not a namespaced Role: persistentvolumes and volumeattachments
+# are cluster-scoped resources, and PodsOnNode lists pods in every namespace to
+# resolve a kubelet pod UID back to a real pod. A Role cannot grant either.
+#
+# Deliberately narrower than pv-doctor needed: no pods/exec, no pods/log, no
+# nodes/proxy. The fix is deleting the consuming pod, not exec'ing fsck into a
+# debug container, so the exec permission goes away with it.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pv-sentinel-cluster-role
+  labels:
+    app: pv-sentinel
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch", "delete"]
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["persistentvolumes"]
+  verbs: ["get", "list"]
+# The resize detector reads claims: a PVC is where spec.resources.requests and
+# status.capacity live, and the two together are the only way to tell a stuck
+# expansion from one still in flight. List across all namespaces, matching the
+# persistentvolumes rule above; no update, the detector never patches a claim.
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  verbs: ["get", "list"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["volumeattachments"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pv-sentinel-cluster-role-binding
+  labels:
+    app: pv-sentinel
+subjects:
+- kind: ServiceAccount
+  name: pv-sentinel
+  namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: pv-sentinel-cluster-role
+  apiGroup: rbac.authorization.k8s.io
