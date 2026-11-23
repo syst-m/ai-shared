@@ -67,10 +67,25 @@ clearing it twice.
    looked healthy. Check the path the user actually uses:
    ```sh
    ssh -p 2222 -o BatchMode=yes cmux@10.10.111.139 \
-     'echo "AK=${#ANTHROPIC_API_KEY} AT=${#ANTHROPIC_AUTH_TOKEN} OK=${#OPENAI_API_KEY}"'
+     'echo "AK=${#ANTHROPIC_API_KEY} AT=${#ANTHROPIC_AUTH_TOKEN} OK=${#OPENAI_API_KEY} GH=${#GH_TOKEN}"'
    ```
    Non-zero lengths mean the credentials arrived; `0` means sshd's `SetEnv` is
    not carrying them, regardless of what the pod spec says.
+
+   Then the config and cluster access, in the same session:
+   ```sh
+   ssh -p 2222 -o BatchMode=yes cmux@10.10.111.139 '
+     ls -l ~/.mcp.json ~/.claude/settings.json ~/.codex/config.toml
+     gh auth status
+     kubectl get pods -n ade-sandbox
+   '
+   ```
+   All three files must exist. `~/.mcp.json` is `subPath`-mounted from the
+   ConfigMap rather than copied by the init container — a bare `$HOME` path is
+   not a volume, so a file the init container writes there dies with it. `gh
+   auth status` is the only proof of gh login (`gh --version` succeeds with no
+   token), and `kubectl get pods` works only because the pod runs as the
+   `cmux-dev` ServiceAccount; on a pod without it, kubectl answers `Forbidden`.
 
 3. **Attach it to cmux:**
    ```sh

@@ -9,7 +9,12 @@
 #   ANTHROPIC_API_KEY=sk-... ./k8s/create-agent-secret.sh   # override one value
 #
 # Keys consumed by the StatefulSets: ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN,
-# OPENAI_API_KEY. Re-running is idempotent (server-side apply).
+# OPENAI_API_KEY, GH_TOKEN. Re-running is idempotent (server-side apply).
+#
+# GH_TOKEN is sourced differently: on macOS the gh token lives in the Keychain
+# and ~/.config/gh/hosts.yml carries no token key, so `gh auth token` is the
+# only non-interactive source. It is soft-required — an empty value warns
+# instead of failing, because both StatefulSets mark the key `optional: true`.
 set -euo pipefail
 
 NS="${NS:-ade-sandbox}"
@@ -41,14 +46,36 @@ if [ "$missing" = 1 ]; then
   exit 1
 fi
 
-# Values are passed via the environment, never on the command line, so they do
-# not appear in the process list or in shell history.
-export ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN OPENAI_API_KEY
+# gh's token is not in ~/.zshrc: on macOS it lives in the Keychain and
+# ~/.config/gh/hosts.yml carries no token key, so `gh auth token` is the only
+# non-interactive source. Soft-required — both StatefulSets mark the key
+# `optional: true`, so an empty value warns instead of aborting.
+GH_TOKEN="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+if [ -z "$GH_TOKEN" ] && command -v gh >/dev/null 2>&1; then
+  GH_TOKEN="$(gh auth token 2>/dev/null || true)"
+fi
+if [ -z "$GH_TOKEN" ]; then
+  echo "WARN: GH_TOKEN is empty (not in env, \`gh auth token\` returned nothing)." >&2
+  echo "      gh in the sandboxes will be unauthenticated; continuing." >&2
+fi
 
-kubectl -n "$NS" create secret generic ade-agent-keys \
-  --from-literal=ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
-  --from-literal=ANTHROPIC_AUTH_TOKEN="$ANTHROPIC_AUTH_TOKEN" \
-  --from-literal=OPENAI_API_KEY="$OPENAI_API_KEY" \
+# The values are quoted into argv here, so they are briefly visible in the
+# process list for the duration of the call; keeping them out of shell history
+# is the reason this script exists instead of typing the values inline.
+args=(
+  --from-literal=ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY"
+  --from-literal=ANTHROPIC_AUTH_TOKEN="$ANTHROPIC_AUTH_TOKEN"
+  --from-literal=OPENAI_API_KEY="$OPENAI_API_KEY"
+)
+if [ -n "$GH_TOKEN" ]; then
+  args+=(--from-literal=GH_TOKEN="$GH_TOKEN")
+fi
+
+kubectl -n "$NS" create secret generic ade-agent-keys "${args[@]}" \
   --dry-run=client -o yaml | kubectl apply -f -
 
-echo "applied Secret ade-agent-keys in $NS (keys: ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, OPENAI_API_KEY)"
+keys="ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, OPENAI_API_KEY"
+if [ -n "$GH_TOKEN" ]; then
+  keys="$keys, GH_TOKEN"
+fi
+echo "applied Secret ade-agent-keys in $NS (keys: $keys)"

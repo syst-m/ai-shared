@@ -17,10 +17,11 @@ Both images bake in the same pinned toolchain plus the agent CLIs
 k8s/
   namespace.yaml           # ade-sandbox
   services.yaml            # headless (governing) + LoadBalancer per runtime
+  rbac.yaml                # cmux-dev ServiceAccount + namespace-scoped Role/RoleBinding
   agent-config.yaml        # ade-agent-env (env vars) + ade-agent-files (codex/claude files)
   orca-statefulset.yaml    # 1 replica, 120Gi iscsi-ext4 -> /home/orca/workspace
   cmux-statefulset.yaml    # 1 replica, 120Gi iscsi-ext4 -> /home/cmux/workspace
-  create-agent-secret.sh   # builds ade-agent-keys from ~/.zshrc (values via env, never argv)
+  create-agent-secret.sh   # builds ade-agent-keys from ~/.zshrc + `gh auth token`
 ```
 
 ## Apply
@@ -37,26 +38,33 @@ kubectl -n ade-sandbox get svc -w          # wait for EXTERNAL-IP on both *-lb
 kubectl -n ade-sandbox create secret generic cmux-ssh-key \
   --from-file=publicKey=$HOME/.ssh/id_ed25519.pub
 
-# agent CLI credentials (ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN / OPENAI_API_KEY),
-# read out of ~/.zshrc into a Secret. The values are passed via the environment,
-# never argv, so they stay out of the process list and shell history.
+# agent CLI credentials (ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN / OPENAI_API_KEY
+# / GH_TOKEN), read out of ~/.zshrc and `gh auth token` into a Secret. The values
+# are passed via the environment, never argv, so they stay out of the process list
+# and shell history.
 k8s/create-agent-secret.sh
 
 kubectl apply -f k8s/agent-config.yaml
+kubectl apply -f k8s/rbac.yaml             # must precede cmux-statefulset.yaml
 kubectl apply -f k8s/orca-statefulset.yaml -f k8s/cmux-statefulset.yaml
 kubectl -n ade-sandbox get pods -w
 ```
 
+`rbac.yaml` before `cmux-statefulset.yaml`: the pod names `serviceAccountName:
+cmux-dev`, and a pod whose SA doesn't exist yet stays stuck in
+`CreateContainerConfigError` until it does.
+
 ## Agent credentials and config
 
-The agent CLIs (`claude`, `codex`) get their settings from three objects, and the
-split is deliberate:
+The agent CLIs (`claude`, `codex`, `gh`) get their settings from four objects, and
+the split is deliberate:
 
 | Object | Holds | Consumed by |
 |---|---|---|
-| Secret `ade-agent-keys` | the API keys | `valueFrom.secretKeyRef` in both StatefulSets |
+| Secret `ade-agent-keys` | the API keys + `GH_TOKEN` | `valueFrom.secretKeyRef` in both StatefulSets |
 | ConfigMap `ade-agent-env` | non-secret scalars (`ANTHROPIC_BASE_URL`, `CLAUDE_CODE_*`, `OPENAI_BASE_URL`) | `envFrom` in both StatefulSets |
-| ConfigMap `ade-agent-files` | `codex-config.toml`, `claude-settings.json` | mounted read-only, copied into `$HOME` by the `seed-agent-config` initContainer |
+| ConfigMap `ade-agent-files` | `codex-config.toml`, `claude-settings.json`, `mcp.json` | mounted read-only at `/opt/agent-config` |
+| ServiceAccount `cmux-dev` (+ Role/RoleBinding) | the pod's k8s identity | `serviceAccountName` on cmux only |
 
 No secret value is committed to this repo — the StatefulSets reference the Secret by
 name, and `create-agent-secret.sh` is the only place the values are read.
@@ -64,6 +72,35 @@ name, and `create-agent-secret.sh` is the only place the values are read.
 `ade-agent-env` and `ade-agent-files` are separate ConfigMaps because `envFrom`
 exports *every* key as an env var, and a file key like `codex-config.toml` is not a
 valid env var name — kubelet skips it with an `InvalidVariableNames` warning.
+
+### How each file reaches `$HOME`
+
+Two mechanisms, and picking the wrong one silently loses the file:
+
+- **`codex-config.toml` and `claude-settings.json` are copied** by the
+  `seed-agent-config` initContainer into `~/.codex` and `~/.claude`. Those are
+  `emptyDir` volumes, so the copies are writable (the CLIs write session state
+  next to their settings, and Orca injects its own hooks into `settings.json` at
+  runtime — a read-only ConfigMap mount on `~/.claude` breaks both) and the
+  copy-if-absent test lets a real home-dir volume win later.
+- **`mcp.json` is mounted**, not copied: each StatefulSet projects that one key as
+  `~/.mcp.json` via `volumeMounts.subPath`. Claude Code reads `~/.mcp.json` as
+  user-scoped MCP config, on top of any `.mcp.json` in an opened project root.
+  A `cp` to a bare `$HOME` path would not work — a bare path is not a volume, so
+  the initContainer's copy lands on the init container's own filesystem layer and
+  is discarded the moment it exits. Only paths that are themselves volumes
+  (emptyDir, PVC, ConfigMap, `subPath`) are shared with the main container.
+
+### kubectl in the sandbox
+
+`rbac.yaml` gives the cmux pod a namespace-scoped identity — pods/services/
+configmaps/events/PVCs read, `pods/log`, and `pods/exec` create in `ade-sandbox` —
+which is the k8s-native equivalent of the laptop's `~/.kube/config`: same binary,
+an identity scoped to what a dev sandbox should see instead of a cluster-admin
+client certificate. The projected SA token rotates on its own and kubectl picks it
+up with no kubeconfig file. `orca-statefulset.yaml` deliberately has no
+`serviceAccountName`: Orca doesn't shell into the cluster, so it keeps the RBAC-less
+`default` SA. See the header of `rbac.yaml` for the reasoning.
 
 On **cmux**, sshd's `SetEnv` is generated at container start from the full container
 environment, which is what makes these vars visible to an SSH-launched shell — see
@@ -161,6 +198,23 @@ kubectl -n ade-sandbox exec cmux-dev-0 -- bash -lc '
   bun --version; uv --version; kubectl version --client; gh --version | head -1'
 kubectl -n ade-sandbox exec orca-dev-0 -- df -h /home/orca/workspace
 ```
+
+Then the three integration checks — config, gh, and in-pod kubectl. Run them over
+**SSH**, not just `kubectl exec`: sshd's `SetEnv` is what exposes the Secret-backed
+vars to a real session, so `exec` and `ssh` can disagree (see the sshd note above).
+
+```sh
+ssh -p 2222 cmux@10.10.111.139 '
+  ls -l ~/.mcp.json ~/.claude/settings.json ~/.codex/config.toml
+  gh auth status                       # "Logged in ... (GH_TOKEN)"
+  kubectl get pods -n ade-sandbox      # works via the cmux-dev SA token
+  kubectl auth can-i get pods -n kube-system   # no — namespace-scoped by design
+'
+```
+
+`gh auth status` is the only check that can't be satisfied by a file: without
+`GH_TOKEN` in the Secret, `gh` prints "not logged in" even though the binary is
+present. `gh --version` alone proves nothing about auth.
 
 ## Teardown
 

@@ -56,6 +56,11 @@ spec:
               [ -f "$home/.codex/config.toml" ]   || cp /opt/agent-config/codex-config.toml "$home/.codex/config.toml"
               [ -f "$home/.claude/settings.json" ] || cp /opt/agent-config/claude-settings.json "$home/.claude/settings.json"
               ls -l "$home/.codex/config.toml" "$home/.claude/settings.json"
+              # Only files destined for a mounted path belong here: anything this
+              # container writes to a bare $HOME path lives on the init
+              # container's own filesystem layer and dies when it exits. That is
+              # why ~/.mcp.json is mounted directly (mcp-config below) instead
+              # of copied.
           # No fsGroup here — it's pod-level only (set above), and kubelet
           # applies it to the emptyDirs so uid/gid 1000 can write them.
           securityContext:
@@ -84,8 +89,8 @@ spec:
               value: "6768"
             - name: ORCA_PAIRING_ADDRESS
               value: "10.10.111.138"
-            # Credentials for the agent CLIs (claude / codex). Values come from
-            # the ade-agent-keys Secret; see k8s/create-agent-secret.sh.
+            # Credentials for the agent CLIs (claude / codex / gh). Values come
+            # from the ade-agent-keys Secret; see k8s/create-agent-secret.sh.
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -101,6 +106,15 @@ spec:
                 secretKeyRef:
                   name: ade-agent-keys
                   key: OPENAI_API_KEY
+            # gh reads GH_TOKEN (preferred over GITHUB_TOKEN) and is then fully
+            # authenticated without a ~/.config/gh/hosts.yml. optional: true
+            # keeps the pod schedulable if the Secret predates this key.
+            - name: GH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: ade-agent-keys
+                  key: GH_TOKEN
+                  optional: true
           # Non-secret agent env (ANTHROPIC_BASE_URL, CLAUDE_CODE_* token limits,
           # OPENAI_BASE_URL). File-bearing keys live in a separate ConfigMap so
           # envFrom doesn't try to export them as env vars.
@@ -117,6 +131,14 @@ spec:
               mountPath: /home/orca/.codex
             - name: claude-config
               mountPath: /home/orca/.claude
+            # Claude Code reads ~/.mcp.json as user-scoped MCP config, on top of
+            # any .mcp.json in an opened project root. Mounted as a single file
+            # (subPath) rather than seeded by the init container, because a bare
+            # $HOME path is not a volume.
+            - name: mcp-config
+              mountPath: /home/orca/.mcp.json
+              subPath: .mcp.json
+              readOnly: true
           # Orca boots its own Xvfb and takes ~60-90s to bind the socket.
           startupProbe:
             tcpSocket:
@@ -148,6 +170,13 @@ spec:
           emptyDir: {}
         - name: claude-config
           emptyDir: {}
+        # Projects just the one key, renamed: mcp.json -> .mcp.json.
+        - name: mcp-config
+          configMap:
+            name: ade-agent-files
+            items:
+              - key: mcp.json
+                path: .mcp.json
   volumeClaimTemplates:
     - metadata:
         name: workspace

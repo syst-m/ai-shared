@@ -3,7 +3,8 @@
 # Two ConfigMaps, deliberately split:
 #   ade-agent-env   -> injected as environment variables via `envFrom`
 #   ade-agent-files -> mounted read-only and copied into $HOME by the
-#                      `seed-agent-config` initContainer
+#                      `seed-agent-config` initContainer (codex config.toml,
+#                      claude settings.json, claude mcp.json)
 #
 # They are separate because `envFrom` injects *every* key in a ConfigMap as an
 # env var, and file keys (`codex-config.toml`) are not valid env var names —
@@ -70,5 +71,36 @@ data:
     {
       "model": "opus[1m]",
       "skipDangerousModePermissionPrompt": true,
-      "theme": "dark"
+      "theme": "dark",
+      "autoCompactEnabled": true
+    }
+
+  # MCP servers for Claude Code, mirroring ~/.mcp.json on the laptop. Claude
+  # Code reads ~/.mcp.json as user-scoped MCP config, on top of any .mcp.json
+  # in an opened project root, so the sandbox gets the same four servers
+  # wherever it opens a repo.
+  #
+  # Both launch commands exist in the images: `npx` from the pinned Node tree
+  # (/opt/node/bin) and `uvx` from the pinned uv binary. The servers download
+  # on first use, so a fresh pod pays a one-time npx/uvx fetch on first call.
+  mcp.json: |
+    {
+      "mcpServers": {
+        "sequential-thinking": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+        },
+        "memory": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-memory"]
+        },
+        "ddg-search": {
+          "command": "uvx",
+          "args": ["duckduckgo-mcp-server"]
+        },
+        "mcp-compass": {
+          "command": "npx",
+          "args": ["-y", "@liuyoshio/mcp-compass"]
+        }
+      }
     }
