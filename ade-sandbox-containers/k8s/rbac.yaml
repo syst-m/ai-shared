@@ -1,0 +1,66 @@
+# kubectl access for the cmux sandbox.
+#
+# The image bakes in the kubectl binary, but a binary is only half of kubectl:
+# it also needs credentials. Without a kubeconfig, kubectl falls back to
+# in-cluster config — the ServiceAccount token kubelet mounts at
+# /var/run/secrets/kubernetes.io/serviceaccount/token. A StatefulSet with no
+# `serviceAccountName` gets the namespace `default` SA, which has no RBAC
+# grants, so every call answers `Forbidden`.
+#
+# This file gives the cmux pod its own identity and a scoped Role, which is the
+# k8s-native equivalent of the laptop's ~/.kube/config: same tool, an identity
+# scoped to what a dev sandbox should see instead of a cluster-admin client
+# certificate. kubectl needs no kubeconfig file and no token refresh — the
+# projected SA token rotates on its own and kubectl picks it up automatically.
+#
+# Scope: read-only over the ade-sandbox namespace, plus pods/exec (so the
+# sandbox can shell into sibling pods). Nothing cluster-wide — `kubectl get ns`
+# from the pod stays Forbidden by design.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cmux-dev
+  namespace: ade-sandbox
+  labels:
+    app: cmux-dev
+    app.kubernetes.io/part-of: ade-sandbox
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cmux-dev
+  namespace: ade-sandbox
+  labels:
+    app: cmux-dev
+    app.kubernetes.io/part-of: ade-sandbox
+rules:
+  # Read-only over the workloads and config in this namespace.
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "events", "persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+  # `kubectl logs`.
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get", "list", "watch"]
+  # `kubectl exec`. Not a read verb: exec runs arbitrary commands in a peer
+  # pod, so it is the one write-ish permission here. Scoped to this namespace.
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cmux-dev
+  namespace: ade-sandbox
+  labels:
+    app: cmux-dev
+    app.kubernetes.io/part-of: ade-sandbox
+subjects:
+  - kind: ServiceAccount
+    name: cmux-dev
+    namespace: ade-sandbox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cmux-dev

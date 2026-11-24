@@ -1,0 +1,106 @@
+# Agent CLI configuration shared by both sandbox runtimes.
+#
+# Two ConfigMaps, deliberately split:
+#   ade-agent-env   -> injected as environment variables via `envFrom`
+#   ade-agent-files -> mounted read-only and copied into $HOME by the
+#                      `seed-agent-config` initContainer (codex config.toml,
+#                      claude settings.json, claude mcp.json)
+#
+# They are separate because `envFrom` injects *every* key in a ConfigMap as an
+# env var, and file keys (`codex-config.toml`) are not valid env var names —
+# kubelet silently skips them with an InvalidVariableNames warning.
+#
+# Credentials are NOT here. They live in the `ade-agent-keys` Secret, created
+# out of band (see create-agent-secret.sh); nothing key-shaped is committed.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ade-agent-env
+  namespace: ade-sandbox
+  labels:
+    app.kubernetes.io/part-of: ade-sandbox
+data:
+  # Mirrors the active (uncommented) Anthropic/Codex block in ~/.zshrc so the
+  # sandboxes behave identically to the laptop. Commented-out vllm/Qwen model
+  # overrides there are intentionally not carried over.
+  ANTHROPIC_BASE_URL: "https://ai.systm.icu"
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+  CLAUDE_CODE_MAX_CONTEXT_TOKENS: "163840"
+  CLAUDE_CODE_AUTO_COMPACT_WINDOW: "147456"
+  CLAUDE_CODE_MAX_OUTPUT_TOKENS: "65535"
+  OPENAI_BASE_URL: "https://ai.systm.icu/v1"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ade-agent-files
+  namespace: ade-sandbox
+  labels:
+    app.kubernetes.io/part-of: ade-sandbox
+data:
+  # Codex CLI provider config. Mirrors ~/.codex/config.toml minus the
+  # machine-specific [projects] trust entries and [hooks.state] hashes, which
+  # are absolute-path bound to the laptop and meaningless in the pod.
+  # Both provider keys are required, not redundant:
+  #   model_provider -> used by a plain `codex` / `codex exec` invocation
+  #   oss_provider   -> used only when codex is invoked with `--oss`
+  # Setting only oss_provider (as the laptop file does) makes plain `codex exec`
+  # fall back to the built-in `openai` provider and hit api.openai.com, which
+  # 401s here because the key is a proxy key, not a real OpenAI one.
+  codex-config.toml: |
+    # Default provider: the AI proxy (LiteLLM in front of the model backends).
+    model_provider = "local"
+    oss_provider   = "local"
+
+    # Top-level, not inside [model_providers.local] — Codex ignores it there
+    # ("model_providers.local.personality is ignored").
+    personality = "pragmatic"
+
+    [model_providers.local]
+    name     = "AI Server"
+    base_url = "https://ai.systm.icu/v1"
+    env_key  = "OPENAI_API_KEY"
+
+  # Claude Code settings. Mirrors the portable scalars from ~/.claude/settings.json.
+  # The Orca SessionStart/UserPromptSubmit/Stop hooks from the laptop are
+  # deliberately omitted: they exec ~/.orca/agent-hooks/claude-hook.sh, which
+  # does not exist in the cmux image, and the Orca runtime installs its own
+  # hooks into this file at runtime.
+  claude-settings.json: |
+    {
+      "model": "opus[1m]",
+      "skipDangerousModePermissionPrompt": true,
+      "theme": "dark",
+      "autoCompactEnabled": true
+    }
+
+  # MCP servers for Claude Code, mirroring ~/.mcp.json on the laptop. Claude
+  # Code reads ~/.mcp.json as user-scoped MCP config, on top of any .mcp.json
+  # in an opened project root, so the sandbox gets the same four servers
+  # wherever it opens a repo.
+  #
+  # Both launch commands exist in the images: `npx` from the pinned Node tree
+  # (/opt/node/bin) and `uvx` from the pinned uv binary. The servers download
+  # on first use, so a fresh pod pays a one-time npx/uvx fetch on first call.
+  mcp.json: |
+    {
+      "mcpServers": {
+        "sequential-thinking": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+        },
+        "memory": {
+          "command": "npx",
+          "args": ["-y", "@modelcontextprotocol/server-memory"]
+        },
+        "ddg-search": {
+          "command": "uvx",
+          "args": ["duckduckgo-mcp-server"]
+        },
+        "mcp-compass": {
+          "command": "npx",
+          "args": ["-y", "@liuyoshio/mcp-compass"]
+        }
+      }
+    }
