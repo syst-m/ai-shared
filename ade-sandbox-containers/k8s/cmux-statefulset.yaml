@@ -98,11 +98,12 @@ spec:
                   key: publicKey
             # Credentials for the agent CLIs (claude / codex / gh). Values come
             # from the ade-agent-keys Secret; see k8s/create-agent-secret.sh.
-            - name: ANTHROPIC_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: ade-agent-keys
-                  key: ANTHROPIC_API_KEY
+            #
+            # Claude gets ANTHROPIC_AUTH_TOKEN (Bearer), not ANTHROPIC_API_KEY
+            # (x-api-key): the endpoint is a proxy gateway, and exporting both at
+            # once makes Claude Code warn "auth may not work as expected". The key
+            # still lives in the Secret for any tool that wants it; it's just not
+            # injected into this pod's env.
             - name: ANTHROPIC_AUTH_TOKEN
               valueFrom:
                 secretKeyRef:
