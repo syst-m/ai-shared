@@ -27,7 +27,28 @@ from_zshrc() {
     | sed -E "s/^[[:space:]]*export $1=//; s/^\"//; s/\"$//; s/^'//; s/'$//"
 }
 
-pick() { local v="${!1:-}"; [ -n "$v" ] && printf '%s' "$v" || from_zshrc "$1"; }
+# A value in ~/.zshrc can itself be a shell reference — OPENAI_API_KEY is
+# exported as "${ANTHROPIC_AUTH_TOKEN}". A plain grep captures that literally,
+# so follow a lone ${NAME} to its value (env first, then ~/.zshrc) up to a few
+# hops. A literal value falls straight through the while test untouched.
+resolve() {
+  local v="$1" name next hops=0
+  while [[ "$v" == '${'* ]] && (( hops < 5 )); do
+    [[ "$v" =~ ^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$ ]] || break
+    name="${BASH_REMATCH[1]}"
+    next="$(pick "$name")"
+    [ -z "$next" ] && break
+    v="$next"; hops=$((hops + 1))
+  done
+  printf '%s' "$v"
+}
+
+# Env value wins; otherwise read from ~/.zshrc; then expand any ${NAME} reference.
+pick() {
+  local v="${!1:-}"
+  [ -n "$v" ] || v="$(from_zshrc "$1")"
+  resolve "$v"
+}
 
 ANTHROPIC_API_KEY="$(pick ANTHROPIC_API_KEY)"
 ANTHROPIC_AUTH_TOKEN="$(pick ANTHROPIC_AUTH_TOKEN)"

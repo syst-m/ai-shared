@@ -176,9 +176,9 @@ ARG JDK_VERSION=25.0.4.1+1
 ARG ORCA_VERSION=v1.4.223
 ARG BUN_VERSION=1.4.2
 ARG UV_VERSION=0.12.21
-ARG CLAUDE_CODE_VERSION=2.1.295
-ARG CODEX_VERSION=0.162.0
-ARG OPENCODE_VERSION=1.18.35
+ARG CLAUDE_CODE_VERSION=2.1.330
+ARG CODEX_VERSION=0.171.0
+ARG OPENCODE_VERSION=1.19.6
 
 # Runtime deps only: xvfb (Orca auto-starts it headless), the Electron shared
 # libraries (Ubuntu 24.04 t64 names), plus basic sandbox ergonomics.
