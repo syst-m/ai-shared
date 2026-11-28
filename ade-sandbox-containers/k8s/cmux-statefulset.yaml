@@ -96,6 +96,22 @@ spec:
                 secretKeyRef:
                   name: cmux-ssh-key
                   key: publicKey
+            # Stable sshd host keypair (see k8s/create-host-key-secret.sh). The
+            # entrypoint writes these into ~/.ssh so the fingerprint survives pod
+            # restarts. optional: true keeps the pod schedulable on a cluster
+            # without the Secret yet, where the entrypoint falls back to generating.
+            - name: CMUX_SSH_HOST_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cmux-ssh-host-key
+                  key: host_ed25519_key
+                  optional: true
+            - name: CMUX_SSH_HOST_KEY_PUB
+              valueFrom:
+                secretKeyRef:
+                  name: cmux-ssh-host-key
+                  key: host_ed25519_key.pub
+                  optional: true
             # Credentials for the agent CLIs (claude / codex / gh). Values come
             # from the ade-agent-keys Secret; see k8s/create-agent-secret.sh.
             #

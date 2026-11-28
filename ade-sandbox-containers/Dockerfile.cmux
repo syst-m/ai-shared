@@ -266,6 +266,23 @@ if [ ! -s "${SSH_DIR}/authorized_keys" ]; then
   exit 1
 fi
 chmod 600 "${SSH_DIR}/authorized_keys"
+# Host key: prefer a stable key supplied via CMUX_SSH_HOST_KEY (from the
+# cmux-ssh-host-key Secret) so it survives pod restarts and clients stop
+# needing `ssh-keygen -R` after every rollout. Written here as the service user
+# rather than mounted from the Secret, because a Secret-mounted file is
+# root-owned and sshd running as this non-root user rejects a host key it
+# doesn't own. Falls back to generating one when no Secret is provided (plain
+# `docker run`).
+if [ -n "${CMUX_SSH_HOST_KEY:-}" ]; then
+  printf '%s\n' "${CMUX_SSH_HOST_KEY}" > "${SSH_DIR}/host_ed25519_key"
+  chmod 600 "${SSH_DIR}/host_ed25519_key"
+  unset CMUX_SSH_HOST_KEY
+fi
+if [ -n "${CMUX_SSH_HOST_KEY_PUB:-}" ]; then
+  printf '%s\n' "${CMUX_SSH_HOST_KEY_PUB}" > "${SSH_DIR}/host_ed25519_key.pub"
+  chmod 644 "${SSH_DIR}/host_ed25519_key.pub"
+  unset CMUX_SSH_HOST_KEY_PUB
+fi
 if [ ! -f "${SSH_DIR}/host_ed25519_key" ]; then
   ssh-keygen -q -t ed25519 -N '' -f "${SSH_DIR}/host_ed25519_key"
 fi
